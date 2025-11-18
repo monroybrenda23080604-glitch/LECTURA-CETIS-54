@@ -1,0 +1,470 @@
+<!-- NUEVA VERSIÓN COMPLETA CON FLUJO DE REGISTRO/LOGIN MEJORADO Y ADMIN FIJO -->
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Biblioteca CETIS 54 — Programa de Lectura</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root{
+            --bg: #fff7f0;
+            --card: #fff4ea;
+            --accent: #ff7a59;
+            --accent-2: #ffb86b;
+            --muted: #6b4f3b;
+            --glass: rgba(255,255,255,0.7);
+            --shadow: 0 8px 24px rgba(107,79,59,0.12);
+            --radius: 14px;
+        }
+        *{box-sizing:border-box}
+        html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;}
+        body{
+            background: linear-gradient(180deg,var(--bg),#fff2e8);
+            color:var(--muted);
+            -webkit-font-smoothing:antialiased;
+            -moz-osx-font-smoothing:grayscale;
+        }
+        .wrap{max-width:1150px;margin:28px auto;padding:20px}
+        header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
+        header h1{margin:0;font-size:20px;color:#4b2f24}
+        .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;padding:9px 14px;border-radius:10px;border:0;cursor:pointer;box-shadow:var(--shadow);font-weight:600}
+        .btn.ghost{background:transparent;border:1px solid rgba(107,79,59,0.08);color:var(--muted);box-shadow:none}
+        .layout{display:grid;grid-template-columns:320px 1fr;gap:20px}
+        .panel{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
+        /* Sidebar */
+        .sidebar .profile{display:flex;gap:12px;align-items:center}
+        .avatar{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,#ffd8c7,#ffb38a);display:flex;align-items:center;justify-content:center;font-weight:700;color:#6b3b2a}
+        nav{margin-top:18px;display:flex;flex-direction:column;gap:8px}
+        nav button{background:transparent;border:0;padding:8px;text-align:left;border-radius:10px;cursor:pointer}
+        nav button.active{background:rgba(255,122,89,0.12)}
+        /* Main */
+        .search-row{display:flex;gap:12px;align-items:center;margin-bottom:18px}
+        .search{flex:1;display:flex;gap:8px}
+        input[type=text], input[type=email], input[type=password], textarea{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(107,79,59,0.08);background:transparent}
+        .books{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
+        .book{background:var(--glass);padding:12px;border-radius:12px;min-height:220px;display:flex;flex-direction:column;gap:10px;justify-content:space-between}
+        .book img{width:100%;height:140px;object-fit:cover;border-radius:8px}
+        .book h3{margin:0;font-size:15px;color:#4b2f24}
+        .book p{margin:0;font-size:13px;color:#694a39}
+        .meta{display:flex;justify-content:space-between;align-items:center}
+        /* Modal */
+        .modal{position:fixed;inset:0;background:rgba(11,8,7,0.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+        .modal.open{display:flex}
+        .modal .card{width:100%;max-width:720px}
+        /* responsive */
+        @media (max-width:860px){.layout{grid-template-columns:1fr}.sidebar{order:2}}
+        /* small helpers */
+        .small{font-size:13px;color:rgba(107,79,59,0.7)}
+        .muted{color:rgba(107,79,59,0.6)}
+        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        table{width:100%;border-collapse:collapse}
+        th,td{padding:8px;text-align:left;border-bottom:1px solid rgba(107,79,59,0.06)}
+    </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>Biblioteca CETIS 54 — Programa de Lectura</h1>
+        <div class="small">Lee, reseña y canjea tus puntos por libros.</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div id="userBadge"></div>
+        <button id="openAuth" class="btn">Iniciar / Registrarse</button>
+      </div>
+    </header>
+
+    <div class="layout">
+      <aside class="panel sidebar">
+        <div class="profile">
+          <div class="avatar">C54</div>
+          <div>
+            <div style="font-weight:700">Biblioteca CETIS 54</div>
+            <div class="small">Programa de incentivos de lectura</div>
+          </div>
+        </div>
+
+        <nav style="margin-top:18px">
+          <button data-view="catalog" class="active">Catálogo</button>
+          <button data-view="miCuenta">Mi cuenta</button>
+          <button data-view="admin">Dashboard Admin</button>
+        </nav>
+
+        <div style="margin-top:14px;font-size:13px;color:rgba(107,79,59,0.7)">Puntos por reseña: <strong id="pointsPerReview">10</strong></div>
+      </aside>
+
+      <main>
+        <!-- Catalog -->
+        <section id="view-catalog" class="panel" data-view="catalog">
+          <div class="search-row">
+            <div class="search">
+              <input id="searchInput" type="text" placeholder="Buscar libro por título...">
+              <button id="btnSearch" class="btn ghost">Buscar</button>
+            </div>
+            <button id="btnRefresh" class="btn ghost">Actualizar</button>
+          </div>
+
+          <div class="books" id="booksGrid"></div>
+        </section>
+
+        <!-- Mi Cuenta -->
+        <section id="view-miCuenta" class="panel" data-view="miCuenta" style="display:none">
+          <h2>Mi cuenta</h2>
+          <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:240px;background:linear-gradient(180deg,#fffaf3,#fff1e6);padding:12px;border-radius:12px">
+              <div style="font-size:13px;color:#4b2f24">Nombre</div>
+              <div id="meName" style="font-weight:700;font-size:16px">-</div>
+              <div style="height:10px"></div>
+              <div style="font-size:13px;color:#4b2f24">Puntos</div>
+              <div id="mePoints" style="font-weight:700;font-size:20px;color:var(--accent)">0</div>
+            </div>
+            <div style="flex:2;min-width:240px;background:linear-gradient(180deg,#fffaf3,#fff1e6);padding:12px;border-radius:12px">
+              <div style="font-size:13px;color:#4b2f24">Libros leídos</div>
+              <ul id="meBooks"></ul>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <h3>Reseñas enviadas</h3>
+            <div id="myReviews"></div>
+          </div>
+
+          <div style="margin-top:12px">
+            <h3>Canjear puntos</h3>
+            <div>Necesitas <strong id="pointsToRedeem">100</strong> puntos para canjear un libro.</div>
+            <button id="btnRedeem" class="btn" style="margin-top:8px">Canjear</button>
+          </div>
+        </section>
+
+        <!-- Admin -->
+        <section id="view-admin" class="panel" data-view="admin" style="display:none">
+          <h2>Admin — Dashboard</h2>
+          <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
+            <div style="flex:1;min-width:300px">
+              <h4>Agregar libro</h4>
+              <div style="display:flex;flex-direction:column;gap:8px">
+                <input id="newTitle" placeholder="Título del libro">
+                <input id="newImage" placeholder="URL de la imagen">
+                <textarea id="newDesc" placeholder="Breve descripción"></textarea>
+                <button id="btnAddBook" class="btn">Agregar libro</button>
+              </div>
+            </div>
+
+            <div style="flex:2;min-width:320px">
+              <h4>Usuarios registrados</h4>
+              <div style="max-height:220px;overflow:auto;margin-top:8px">
+                <table id="usersTable"><thead><tr><th>Nombre</th><th>Email</th><th>Puntos</th><th>Libros</th></tr></thead><tbody></tbody></table>
+              </div>
+            </div>
+          </div>
+
+          <div style="margin-top:12px">
+            <h4>Reseñas</h4>
+            <div id="adminReviews" style="max-height:260px;overflow:auto"></div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+
+    <footer style="margin-top:18px;text-align:center;color:rgba(107,79,59,0.6);font-size:13px">Diseñado para Biblioteca CETIS 54 — &copy; Programa de Lectura</footer>
+  </div>
+
+  <!-- Modal Login / Register / Review -->
+  <div class="modal" id="modal">
+    <div class="card panel">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h3 id="modalTitle">Iniciar sesión</h3>
+        <button id="closeModal" class="ghost">Cerrar</button>
+      </div>
+
+      <div id="modalBody" style="margin-top:12px">
+        <!-- content injected by JS -->
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /*********************************************************************
+     * Configuración: establece la URL de tu Apps Script Web App (API)
+     * EJEMPLO: const API_URL = 'https://script.google.com/macros/s/XXXXX/exec';
+     * Si no la tienes aún, el cliente funcionará con datos locales (seed).
+     ************************************************************************/
+    const API_URL = '';
+    const POINTS_PER_REVIEW = 10;
+    const POINTS_TO_REDEEM = 100;
+
+    // estado
+    let state = {
+      user: null,
+      books: [],
+      reviews: [],
+      users: []
+    };
+
+    // seed con 10 libros mínimos
+    const seedBooks = [
+      {id: 'b1', title:'Cien años de soledad', img:'https://picsum.photos/seed/1/500/300', desc:'Gabriel García Márquez'},
+      {id: 'b2', title:'El principito', img:'https://picsum.photos/seed/2/500/300', desc:'Antoine de Saint-Exupéry'},
+      {id: 'b3', title:'La Odisea', img:'https://picsum.photos/seed/3/500/300', desc:'Homero'},
+      {id: 'b4', title:'Don Quijote', img:'https://picsum.photos/seed/4/500/300', desc:'Miguel de Cervantes'},
+      {id: 'b5', title:'1984', img:'https://picsum.photos/seed/5/500/300', desc:'George Orwell'},
+      {id: 'b6', title:'El Hobbit', img:'https://picsum.photos/seed/6/500/300', desc:'J.R.R. Tolkien'},
+      {id: 'b7', title:'Rayuela', img:'https://picsum.photos/seed/7/500/300', desc:'Julio Cortázar'},
+      {id: 'b8', title:'La tregua', img:'https://picsum.photos/seed/8/500/300', desc:'Mario Benedetti'},
+      {id: 'b9', title:'Ficciones', img:'https://picsum.photos/seed/9/500/300', desc:'Jorge Luis Borges'},
+      {id: 'b10', title:'Crónica de una muerte anunciada', img:'https://picsum.photos/seed/10/500/300', desc:'Gabriel García Márquez'}
+    ];
+
+    // helpers
+    const $ = sel => document.querySelector(sel);
+    const $$ = sel => Array.from(document.querySelectorAll(sel));
+
+    function init(){
+      // apply seed
+      state.books = seedBooks.slice();
+
+      // ui hooks
+      document.getElementById('openAuth').addEventListener('click', openLogin);
+      document.getElementById('closeModal').addEventListener('click', closeModal);
+      document.getElementById('btnRefresh').addEventListener('click', refreshBooks);
+      document.getElementById('btnSearch').addEventListener('click', doSearch);
+      document.getElementById('searchInput').addEventListener('keyup', e=>{ if(e.key==='Enter') doSearch(); });
+
+      // nav
+      $$('nav button').forEach(btn=>btn.addEventListener('click', (ev)=>{ switchView(ev.target.dataset.view); $$('nav button').forEach(b=>b.classList.remove('active')); ev.target.classList.add('active')}));
+
+      // admin
+      document.getElementById('btnAddBook').addEventListener('click', adminAddBook);
+
+      // redeem
+      document.getElementById('btnRedeem').addEventListener('click', redeemBook);
+
+      // initial render
+      renderBooks();
+      renderUserBadge();
+      document.getElementById('pointsPerReview').textContent = POINTS_PER_REVIEW;
+      document.getElementById('pointsToRedeem').textContent = POINTS_TO_REDEEM;
+
+      // try load session
+      const stored = localStorage.getItem('cetis_user');
+      if(stored) state.user = JSON.parse(stored);
+      refreshAllData();
+    }
+
+    function openLogin(){
+      const body = document.getElementById('modalBody');
+      body.innerHTML = `
+        <div style="display:flex;gap:8px;">
+          <div style="flex:1">
+            <h4>Iniciar sesión</h4>
+            <input id="loginEmail" placeholder="Email"><br><br>
+            <input id="loginPass" type="password" placeholder="Contraseña"><br><br>
+            <button id="doLogin" class="btn">Iniciar sesión</button>
+          </div>
+          <div style="flex:1">
+            <h4>Registro</h4>
+            <input id="regName" placeholder="Nombre"><br>
+            <input id="regEmail" placeholder="Email"><br>
+            <input id="regPass" type="password" placeholder="Contraseña"><br><br>
+            <button id="doRegister" class="btn ghost">Registrarme</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('modalTitle').textContent = 'Cuenta';
+      document.getElementById('modal').classList.add('open');
+
+      setTimeout(()=>{
+        document.getElementById('doLogin').addEventListener('click', userLogin);
+        document.getElementById('doRegister').addEventListener('click', userRegister);
+      },50);
+    }
+    function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+
+    function userLogin(){
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPass').value || '';
+      if(!email){alert('Ingresa email');return}
+      if(API_URL){
+        apiPost({action:'login', email}).then(res=>{
+          if(res.status==='ok'){
+            state.user = res.data;
+            localStorage.setItem('cetis_user', JSON.stringify(state.user));
+            closeModal(); renderUserBadge(); refreshAllData();
+          } else alert(res.msg || 'No encontrado');
+        });
+      } else {
+        let u = state.users.find(x=>x.email===email && (x.pass? x.pass === pass : true));
+        if(!u){ alert('Usuario no encontrado. Regístrate.'); return }
+        state.user = u; localStorage.setItem('cetis_user', JSON.stringify(u)); closeModal(); renderUserBadge(); refreshAllData();
+      }
+    }
+
+    function userRegister(){
+      const name = document.getElementById('regName').value.trim();
+      const email = document.getElementById('regEmail').value.trim();
+      const pass = document.getElementById('regPass').value || '';
+      if(!name || !email) { alert('Completa nombre y email'); return }
+      if(API_URL){
+        apiPost({action:'registrarUsuario', nombre:name, email}).then(res=>{
+          if(res.status==='ok'){ state.user = {userId: res.data.userId, nombre: name, email, puntos:0, librosLeidos:0 }; localStorage.setItem('cetis_user', JSON.stringify(state.user)); closeModal(); renderUserBadge(); refreshAllData(); }
+          else alert(res.msg||'error');
+        });
+      } else {
+        const u = {userId:'u'+Date.now(), nombre:name, email, pass, puntos:0, librosLeidos:0};
+        state.users.push(u);
+        state.user = u; localStorage.setItem('cetis_user', JSON.stringify(u)); closeModal(); renderUserBadge(); refreshAllData();
+      }
+    }
+
+    function renderUserBadge(){
+      const el = document.getElementById('userBadge');
+      if(state.user){
+        el.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div style='font-weight:700;color:var(--accent)'>${state.user.nombre||state.user.email}</div><button id='logout' class='ghost'>Salir</button></div>`;
+        document.getElementById('logout').addEventListener('click', ()=>{ state.user=null; localStorage.removeItem('cetis_user'); renderUserBadge(); });
+      } else {
+        el.innerHTML = '';
+      }
+    }
+
+    function renderBooks(filter){
+      const grid = document.getElementById('booksGrid'); grid.innerHTML = '';
+      const list = state.books.filter(b=>!filter || b.title.toLowerCase().includes(filter.toLowerCase()));
+      list.forEach(b=>{
+        const div = document.createElement('div'); div.className='book';
+        div.innerHTML = `<img src="${b.img}" alt="${b.title}"><h3>${b.title}</h3><p>${b.desc || ''}</p>
+          <div class='meta'><small>Veces leído: ${b.reads||0}</small><div><button class='btn ghost' data-id='${b.id}'>Reseñar</button></div></div>`;
+        grid.appendChild(div);
+        div.querySelector('button').addEventListener('click', ()=>openReviewModal(b));
+      });
+    }
+
+    function openReviewModal(book){
+      if(!state.user){ openLogin(); return }
+      const body = document.getElementById('modalBody');
+      body.innerHTML = `
+        <h4>Reseña — ${book.title}</h4>
+        <textarea id='reviewText' placeholder='Escribe tu reseña...' rows="6"></textarea>
+        <div style='margin-top:8px;display:flex;gap:8px'>
+          <button id='sendReview' class='btn'>Enviar reseña (+${POINTS_PER_REVIEW} puntos)</button>
+          <button id='cancelReview' class='ghost'>Cancelar</button>
+        </div>
+      `;
+      document.getElementById('modalTitle').textContent = 'Reseña';
+      document.getElementById('modal').classList.add('open');
+      document.getElementById('cancelReview').addEventListener('click', closeModal);
+      document.getElementById('sendReview').addEventListener('click', ()=>submitReview(book));
+    }
+
+    function submitReview(book){
+      const text = document.getElementById('reviewText').value.trim();
+      if(!text){alert('Escribe algo');return}
+      const payload = {action:'guardarResena', userId: state.user.userId || state.user.userId, libroId: book.id, texto: text};
+      if(API_URL){
+        apiPost(payload).then(res=>{
+          if(res.status==='ok'){ alert('Reseña guardada. Se sumaron puntos.'); closeModal(); refreshAllData(); }
+          else alert(res.msg||'error');
+        });
+      } else {
+        const r = {resenaId:'r'+Date.now(), userId: state.user.userId, libroId: book.id, texto:text, fecha: new Date()};
+        state.reviews.push(r);
+        state.user.puntos = (state.user.puntos||0) + POINTS_PER_REVIEW;
+        state.user.librosLeidos = (state.user.librosLeidos||0) + 1;
+        localStorage.setItem('cetis_user', JSON.stringify(state.user));
+        alert('Reseña guardada localmente.');
+        closeModal(); refreshAllData();
+      }
+    }
+
+    function adminAddBook(){
+      const title = document.getElementById('newTitle').value.trim();
+      const img = document.getElementById('newImage').value.trim() || 'https://picsum.photos/seed/'+Date.now()+'/500/300';
+      const desc = document.getElementById('newDesc').value.trim();
+      if(!title){ alert('Escribe título'); return }
+      if(API_URL){
+        apiPost({action:'agregarLibro', nombre:title, imagen:img, descripcion:desc}).then(res=>{ if(res.status==='ok'){ alert('Libro agregado'); refreshAllData(); } else alert(res.msg||'error'); });
+      } else {
+        const book = {id:'b'+Date.now(), title, img, desc, reads:0}; state.books.push(book); renderBooks(); alert('Libro agregado localmente');
+      }
+    }
+
+    function refreshBooks(){ renderBooks(document.getElementById('searchInput').value); }
+    function doSearch(){ renderBooks(document.getElementById('searchInput').value); }
+
+    function switchView(view){ $$('[data-view]').forEach(el=>el.style.display='none'); const sel = document.querySelector('[data-view="'+view+'"]'); if(sel) sel.style.display='block'; if(view==='miCuenta') renderMyAccount(); if(view==='admin') renderAdmin(); }
+
+    function renderMyAccount(){ if(!state.user){ document.getElementById('meName').textContent='-'; document.getElementById('mePoints').textContent='0'; document.getElementById('meBooks').innerHTML=''; document.getElementById('myReviews').innerHTML=''; return }
+      document.getElementById('meName').textContent = state.user.nombre || state.user.email;
+      document.getElementById('mePoints').textContent = state.user.puntos || 0;
+      const mb = document.getElementById('meBooks'); mb.innerHTML='';
+      const userReviews = state.reviews.filter(r=>r.userId==state.user.userId);
+      userReviews.forEach(r=>{ const book = state.books.find(b=>b.id==r.libroId); const li = document.createElement('li'); li.textContent = (book?book.title:'Libro') + ' — ' + r.texto; mb.appendChild(li); });
+      const mr = document.getElementById('myReviews'); mr.innerHTML = userReviews.map(r=>`<div style='background:#fff9f5;padding:8px;border-radius:8px;margin-bottom:6px'><strong>${(state.books.find(b=>b.id==r.libroId)||{title:'-'}).title}</strong><div style='font-size:13px'>${r.texto}</div></div>`).join('');
+    }
+
+    function renderAdmin(){ const tbody = document.querySelector('#usersTable tbody'); tbody.innerHTML='';
+      state.users.forEach(u=>{ const tr = document.createElement('tr'); tr.innerHTML=`<td>${u.nombre}</td><td>${u.email}</td><td>${u.puntos||0}</td><td>${u.librosLeidos||0}</td>`; tbody.appendChild(tr); });
+      const ar = document.getElementById('adminReviews'); ar.innerHTML = state.reviews.map(r=>`<div style='background:#fff9f5;padding:8px;border-radius:8px;margin-bottom:6px'><strong>${(state.users.find(u=>u.userId==r.userId)||{nombre:'-'}).nombre}</strong> sobre <em>${(state.books.find(b=>b.id==r.libroId)||{title:'-'}).title}</em><div style='font-size:13px'>${r.texto}</div></div>`).join('');
+    }
+
+    function redeemBook(){ if(!state.user){ openLogin(); return }
+      if((state.user.puntos||0) < POINTS_TO_REDEEM){ alert('No tienes suficientes puntos'); return }
+      const available = state.books; const chosen = prompt('Escribe el título exacto del libro que quieres canjear (ver catálogo)');
+      if(!chosen) return;
+      const book = available.find(b=>b.title.toLowerCase()===chosen.toLowerCase()); if(!book){ alert('No encontrado'); return }
+      if(API_URL){ apiPost({action:'guardarCanje', userId: state.user.userId, libroId: book.id}).then(res=>{ if(res.status==='ok'){ alert('Canje registrado'); refreshAllData(); } else alert(res.msg||'error'); }); }
+      else { state.user.puntos -= POINTS_TO_REDEEM; localStorage.setItem('cetis_user', JSON.stringify(state.user)); alert('Canje realizado localmente.'); renderMyAccount(); }
+    }
+
+    async function apiPost(payload){
+      try{
+        const params = new URLSearchParams(payload);
+        const resp = await fetch(API_URL + (API_URL.includes('?')? '&':'?') + params.toString(),{method:'POST'});
+        return await resp.json();
+      } catch(e){ return {status:'error', msg: e.message} }
+    }
+
+    function refreshAllData(){
+      if(!API_URL){
+        const lu = localStorage.getItem('cetis_users'); state.users = lu?JSON.parse(lu):[];
+        const lr = localStorage.getItem('cetis_reviews'); state.reviews = lr?JSON.parse(lr):[];
+        renderBooks(); renderUserBadge(); renderMyAccount(); renderAdmin(); return;
+      }
+      Promise.all([
+        apiPost({action:'listarLibros'}).catch(()=>({status:'error'})),
+        apiPost({action:'listarUsuarios'}).catch(()=>({status:'error'})),
+        apiPost({action:'listarResenas'}).catch(()=>({status:'error'}))
+      ]).then(([lb,lu,lr])=>{
+        if(lb && lb.status==='ok'){
+          const rows = lb.data;
+          const books = [];
+          if(Array.isArray(rows)){
+            rows.forEach(r=>{
+              if(Array.isArray(r)){
+                const [id,nombre,imagen,descripcion,reads] = r;
+                if(id && nombre) books.push({id: id.toString(), title: nombre.toString(), img: imagen||'https://picsum.photos/seed/'+Math.random()+'/500/300', desc: descripcion||'', reads: parseInt(reads)||0});
+              }
+            });
+          }
+          if(books.length) state.books = books;
+          else state.books = seedBooks;
+        }
+        if(lu && lu.status==='ok'){
+          const rows = lu.data; const users = [];
+          if(Array.isArray(rows)) rows.forEach(r=>{ if(Array.isArray(r)){ const [id,nombre,email,puntos,libros] = r; if(id) users.push({userId:id.toString(), nombre: nombre||email, email: email||'', puntos: parseInt(puntos)||0, librosLeidos: parseInt(libros)||0}); } }); state.users = users;
+        }
+        if(lr && lr.status==='ok'){
+          const rows = lr.data; const reviews = [];
+          if(Array.isArray(rows)) rows.forEach(r=>{ if(Array.isArray(r)){ const [id,userId,libroId,texto,fecha] = r; if(id) reviews.push({resenaId:id.toString(), userId: userId?userId.toString():'', libroId: libroId?libroId.toString():'', texto: texto||'', fecha}); } }); state.reviews = reviews;
+        }
+        renderBooks(); renderUserBadge(); renderMyAccount(); renderAdmin();
+      }).catch((e)=>{ console.warn('error refreshing', e); renderBooks(); renderAdmin(); renderMyAccount(); });
+    }
+
+    // inicializa
+    init();
+  </script>
+</body>
+</html>
