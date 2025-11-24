@@ -1,76 +1,122 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Biblioteca CETIS 54 — Programa de Lectura</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root{
-            --bg: #fff7f0;
-            --card: #fff4ea;
-            --accent: #ff7a59;
-            --accent-2: #ffb86b;
-            --muted: #6b4f3b;
-            --glass: rgba(255,255,255,0.7);
-            --shadow: 0 8px 24px rgba(107,79,59,0.12);
-            --radius: 14px;
-        }
-        *{box-sizing:border-box}
-        html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;}
-        body{
-            background: linear-gradient(180deg,var(--bg),#fff2e8);
-            color:var(--muted);
-            -webkit-font-smoothing:antialiased;
-            -moz-osx-font-smoothing:grayscale;
-        }
-        .wrap{max-width:1150px;margin:28px auto;padding:20px}
-        header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:20px}
-        header h1{margin:0;font-size:20px;color:#4b2f24}
-        .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;padding:9px 14px;border-radius:10px;border:0;cursor:pointer;box-shadow:var(--shadow);font-weight:600}
-        .btn.ghost{background:transparent;border:1px solid rgba(107,79,59,0.08);color:var(--muted);box-shadow:none}
-        .layout{display:grid;grid-template-columns:320px 1fr;gap:20px}
-        .panel{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow)}
-        /* Sidebar */
-        .sidebar .profile{display:flex;gap:12px;align-items:center}
-        .avatar{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,#ffd8c7,#ffb38a);display:flex;align-items:center;justify-content:center;font-weight:700;color:#6b3b2a}
-        nav{margin-top:18px;display:flex;flex-direction:column;gap:8px}
-        nav button{background:transparent;border:0;padding:8px;text-align:left;border-radius:10px;cursor:pointer}
-        nav button.active{background:rgba(255,122,89,0.12)}
-        /* Main */
-        .search-row{display:flex;gap:12px;align-items:center;margin-bottom:18px}
-        .search{flex:1;display:flex;gap:8px}
-        input[type=text], input[type=email], input[type=password], textarea{flex:1;padding:10px;border-radius:10px;border:1px solid rgba(107,79,59,0.08);background:transparent}
-        .books{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px}
-        .book{background:var(--glass);padding:12px;border-radius:12px;min-height:220px;display:flex;flex-direction:column;gap:10px;justify-content:space-between}
-        .book img{width:100%;height:140px;object-fit:cover;border-radius:8px}
-        .book h3{margin:0;font-size:15px;color:#4b2f24}
-        .book p{margin:0;font-size:13px;color:#694a39}
-        .meta{display:flex;justify-content:space-between;align-items:center}
-        /* Modal */
-        .modal{position:fixed;inset:0;background:rgba(11,8,7,0.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
-        .modal.open{display:flex}
-        .modal .card{width:100%;max-width:720px}
-        /* responsive */
-        @media (max-width:860px){.layout{grid-template-columns:1fr}.sidebar{order:2}}
-        /* small helpers */
-        .small{font-size:13px;color:rgba(107,79,59,0.7)}
-        .muted{color:rgba(107,79,59,0.6)}
-        .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-        table{width:100%;border-collapse:collapse}
-        th,td{padding:8px;text-align:left;border-bottom:1px solid rgba(107,79,59,0.06)}
-    </style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Biblioteca CETIS 54 — Programa de Lectura</title>
+
+  <!-- Tipografía (mantenida) -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root{
+      --bg: #fff7f0;
+      --card: #fff4ea;
+      --accent: #ff7a59;
+      --accent-2: #ffb86b;
+      --muted: #6b4f3b;
+      --muted-2: rgba(107,79,59,0.6);
+      --glass: rgba(255,255,255,0.75);
+      --shadow: 0 10px 30px rgba(107,79,59,0.12);
+      --radius: 14px;
+      --radius-sm: 10px;
+      --success: #3ecf8e;
+      --danger: #ff6b6b;
+      --transition: 220ms cubic-bezier(.2,.9,.3,1);
+      --glass-border: rgba(107,79,59,0.06);
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%;margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial; background: linear-gradient(180deg,var(--bg),#fff2e8); color:var(--muted); -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;}
+    a{color:inherit}
+    .wrap{max-width:1150px;margin:28px auto;padding:22px}
+    header{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:18px}
+    header .brand{display:flex;gap:12px;align-items:center}
+    header h1{margin:0;font-size:18px;color:#4b2f24;font-weight:700}
+    header .subtitle{font-size:13px;color:var(--muted-2)}
+    /* Buttons */
+    .btn{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;padding:9px 14px;border-radius:12px;border:0;cursor:pointer;box-shadow:var(--shadow);font-weight:600;transition:transform var(--transition), box-shadow var(--transition)}
+    .btn:active{transform:translateY(1px)}
+    .btn.ghost{background:transparent;border:1px solid var(--glass-border);color:var(--muted);box-shadow:none}
+    .btn.flat{background:transparent;border:0;color:var(--accent);padding:6px 10px}
+    .btn.icon{display:inline-flex;align-items:center;gap:8px;padding:8px 10px}
+    /* Layout */
+    .layout{display:grid;grid-template-columns:320px 1fr;gap:20px}
+    .panel{background:var(--card);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);overflow:hidden}
+    /* Sidebar */
+    .sidebar .profile{display:flex;gap:12px;align-items:center}
+    .avatar{width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,#ffd8c7,#ffb38a);display:flex;align-items:center;justify-content:center;font-weight:700;color:#6b3b2a}
+    nav{margin-top:18px;display:flex;flex-direction:column;gap:8px}
+    nav button{background:transparent;border:0;padding:10px;text-align:left;border-radius:10px;cursor:pointer;display:flex;align-items:center;gap:10px;font-weight:600;color:var(--muted)}
+    nav button svg{opacity:0.85}
+    nav button.active{background:rgba(255,122,89,0.12);color: #4b2f24}
+    .muted{color:var(--muted-2)}
+    /* Search & controls */
+    .search-row{display:flex;gap:12px;align-items:center;margin-bottom:18px}
+    .search{flex:1;display:flex;gap:8px;align-items:center}
+    .search input[type="text"]{flex:1;padding:10px 12px;border-radius:12px;border:1px solid var(--glass-border);background:transparent;outline:none;transition:box-shadow var(--transition)}
+    .search input[type="text"]:focus{box-shadow:0 4px 18px rgba(107,79,59,0.06)}
+    /* Books grid */
+    .books{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:14px}
+    .book{background:linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.45));padding:12px;border-radius:12px;min-height:240px;display:flex;flex-direction:column;gap:10px;justify-content:space-between;border:1px solid var(--glass-border);position:relative;overflow:hidden;transition:transform var(--transition), box-shadow var(--transition)}
+    .book:hover{transform:translateY(-6px);box-shadow:0 18px 40px rgba(107,79,59,0.12)}
+    .book .cover{width:100%;height:140px;object-fit:cover;border-radius:10px;background:#eee;box-shadow:inset 0 -6px 18px rgba(0,0,0,0.03)}
+    .book h3{margin:0;font-size:15px;color:#4b2f24}
+    .book p{margin:0;font-size:13px;color:#694a39;min-height:36px}
+    .meta{display:flex;justify-content:space-between;align-items:center}
+    .badge{background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;padding:6px 8px;border-radius:10px;font-weight:700;font-size:13px}
+    /* Card footer actions */
+    .actions{display:flex;gap:8px;align-items:center}
+    .ghost-small{background:transparent;border:1px solid var(--glass-border);padding:6px 8px;border-radius:8px;cursor:pointer}
+    /* Modal */
+    .modal{position:fixed;inset:0;background:rgba(11,8,7,0.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:60;backdrop-filter: blur(2px)}
+    .modal.open{display:flex}
+    .modal .card{width:100%;max-width:720px;border-radius:14px;padding:18px;background:linear-gradient(180deg,#fffdfa,#fff7f1);box-shadow:0 18px 50px rgba(16,12,10,0.25)}
+    .modal h4{margin:0 0 8px 0}
+    .input, textarea{width:100%;padding:10px;border-radius:10px;border:1px solid var(--glass-border);background:transparent;outline:none;font-size:14px}
+    textarea{resize:vertical;min-height:80px}
+    .modal .split{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+    /* small helpers */
+    .small{font-size:13px;color:rgba(107,79,59,0.7)}
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    table{width:100%;border-collapse:collapse}
+    th,td{padding:8px;text-align:left;border-bottom:1px solid rgba(107,79,59,0.06);font-size:14px}
+    /* Account card */
+    .progress-wrap{background:#fff;padding:8px;border-radius:10px;border:1px solid var(--glass-border)}
+    .progress{height:10px;background:rgba(107,79,59,0.06);border-radius:10px;overflow:hidden}
+    .progress > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent-2));width:0%;transition:width 600ms cubic-bezier(.2,.9,.3,1)}
+    /* toast */
+    .toast{position:fixed;right:18px;bottom:18px;background:linear-gradient(90deg,var(--accent),var(--accent-2));color:white;padding:10px 14px;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,0.12);z-index:140;display:none}
+    .toast.show{display:block;animation:toastIn .35s ease}
+    @keyframes toastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+    /* responsive */
+    @media (max-width:860px){ .layout{grid-template-columns:1fr} .sidebar{order:2} .modal .split{grid-template-columns:1fr} .books{grid-template-columns:repeat(auto-fill,minmax(160px,1fr));} }
+    /* icons simple */
+    .icon-s{width:18px;height:18px;vertical-align:middle;display:inline-block}
+    /* subtle text truncation */
+    .truncate{display:block;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+    /* admin reviews */
+    .review-card{background:#fff9f5;padding:10px;border-radius:10px;margin-bottom:8px;border:1px solid var(--glass-border)}
+    /* confetti canvas overlay */
+    #confettiCanvas{position:fixed;left:0;top:0;width:100%;height:100%;pointer-events:none;z-index:150}
+  </style>
 </head>
 <body>
   <div class="wrap">
     <header>
-      <div>
-        <h1>Biblioteca CETIS 54 — Programa de Lectura</h1>
-        <div class="small">Lee, reseña y canjea tus puntos por libros.</div>
+      <div class="brand">
+        <div style="width:56px;height:56px;border-radius:12px;background:linear-gradient(180deg,#ffd8c7,#ffb38a);display:flex;align-items:center;justify-content:center;font-weight:800;color:#6b3b2a;font-size:18px">C54</div>
+        <div>
+          <h1>Biblioteca CETIS 54</h1>
+          <div class="subtitle">Programa de Lectura — Lee, reseña y canjea tus puntos</div>
+        </div>
       </div>
-      <div style="display:flex;gap:10px;align-items:center">
+
+      <div style="display:flex;gap:12px;align-items:center">
         <div id="userBadge"></div>
-        <button id="openAuth" class="btn">Iniciar / Registrarse</button>
+        <button id="openAuth" class="btn icon" title="Cuenta">
+          <svg class="icon-s" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0" stroke="white" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+          Iniciar / Registrarse
+        </button>
       </div>
     </header>
 
@@ -85,31 +131,56 @@
         </div>
 
         <nav style="margin-top:18px">
-          <button data-view="catalog" class="active">Catálogo</button>
-          <button data-view="miCuenta">Mi cuenta</button>
-          <button data-view="admin">Dashboard Admin</button>
+          <button data-view="catalog" class="active" title="Catálogo">
+            <svg class="icon-s" viewBox="0 0 24 24" fill="none"><path d="M3 5h18M3 12h18M3 19h18" stroke="#6b4f3b" stroke-width="1.4" stroke-linecap="round"></path></svg>
+            Catálogo
+          </button>
+          <button data-view="miCuenta" title="Mi cuenta">
+            <svg class="icon-s" viewBox="0 0 24 24" fill="none"><path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM4 20a8 8 0 0 1 16 0" stroke="#6b4f3b" stroke-width="1.4" stroke-linecap="round"></path></svg>
+            Mi cuenta
+          </button>
+          <button data-view="admin" title="Administración">
+            <svg class="icon-s" viewBox="0 0 24 24" fill="none"><path d="M3 7h18M6 7v14M18 7v14M9 7v14M15 7v14" stroke="#6b4f3b" stroke-width="1.4" stroke-linecap="round"></path></svg>
+            Dashboard Admin
+          </button>
         </nav>
 
-        <div style="margin-top:14px;font-size:13px;color:rgba(107,79,59,0.7)">Puntos por reseña: <strong id="pointsPerReview">10</strong></div>
+        <div style="margin-top:14px;font-size:13px;color:var(--muted-2)">Puntos por reseña: <strong id="pointsPerReview">10</strong></div>
       </aside>
 
       <main>
         <!-- Catalog -->
         <section id="view-catalog" class="panel" data-view="catalog">
           <div class="search-row">
-            <div class="search">
-              <input id="searchInput" type="text" placeholder="Buscar libro por título...">
-              <button id="btnSearch" class="btn ghost">Buscar</button>
+            <div class="search" role="search" aria-label="Buscar libro">
+              <input id="searchInput" type="text" placeholder="Buscar libro por título..." aria-label="Buscar libro">
+              <button id="btnSearch" class="btn ghost icon" title="Buscar">
+                <svg class="icon-s" viewBox="0 0 24 24" fill="none"><path d="M21 21l-4.35-4.35" stroke="#6b4f3b" stroke-width="1.4" stroke-linecap="round"></path><circle cx="11" cy="11" r="6" stroke="#6b4f3b" stroke-width="1.4"></circle></svg> Buscar
+              </button>
             </div>
-            <button id="btnRefresh" class="btn ghost">Actualizar</button>
+
+            <div style="display:flex;gap:8px;align-items:center">
+              <button id="btnRefresh" class="btn ghost icon" title="Actualizar catálogo">
+                <svg class="icon-s" viewBox="0 0 24 24" fill="none"><path d="M20 11a8 8 0 1 0-3.16 6.16L20 21" stroke="#6b4f3b" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Actualizar
+              </button>
+              <div style="display:flex;gap:8px;align-items:center">
+                <div class="small muted">Total:</div>
+                <div id="booksCount" class="badge">0</div>
+              </div>
+            </div>
           </div>
 
-          <div class="books" id="booksGrid"></div>
+          <div class="books" id="booksGrid" aria-live="polite"></div>
         </section>
 
         <!-- Mi Cuenta -->
         <section id="view-miCuenta" class="panel" data-view="miCuenta" style="display:none">
-          <h2>Mi cuenta</h2>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:12px">
+            <h2 style="margin:0">Mi cuenta</h2>
+            <div class="small muted">Progreso hacia canje</div>
+          </div>
+
           <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
             <div style="flex:1;min-width:240px;background:linear-gradient(180deg,#fffaf3,#fff1e6);padding:12px;border-radius:12px">
               <div style="font-size:13px;color:#4b2f24">Nombre</div>
@@ -117,10 +188,21 @@
               <div style="height:10px"></div>
               <div style="font-size:13px;color:#4b2f24">Puntos</div>
               <div id="mePoints" style="font-weight:700;font-size:20px;color:var(--accent)">0</div>
+
+              <div style="height:12px"></div>
+              <div class="progress-wrap">
+                <div style="display:flex;justify-content:space-between;align-items:center;font-size:13px;margin-bottom:8px"><div>Progreso</div><div class="small"><span id="pointsPercent">0</span>%</div></div>
+                <div class="progress"><i id="progressBar"></i></div>
+              </div>
+
             </div>
+
             <div style="flex:2;min-width:240px;background:linear-gradient(180deg,#fffaf3,#fff1e6);padding:12px;border-radius:12px">
-              <div style="font-size:13px;color:#4b2f24">Libros leídos</div>
-              <ul id="meBooks"></ul>
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <div style="font-size:13px;color:#4b2f24">Libros leídos</div>
+                <div class="small muted">Haz reseñado: <strong id="meBooksCount">0</strong></div>
+              </div>
+              <ul id="meBooks" style="margin-top:8px"></ul>
             </div>
           </div>
 
@@ -131,28 +213,35 @@
 
           <div style="margin-top:12px">
             <h3>Canjear puntos</h3>
-            <div>Necesitas <strong id="pointsToRedeem">100</strong> puntos para canjear un libro.</div>
+            <div class="small muted">Necesitas <strong id="pointsToRedeem">100</strong> puntos para canjear un libro.</div>
             <button id="btnRedeem" class="btn" style="margin-top:8px">Canjear</button>
           </div>
         </section>
 
         <!-- Admin -->
         <section id="view-admin" class="panel" data-view="admin" style="display:none">
-          <h2>Admin — Dashboard</h2>
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <h2 style="margin:0">Admin — Dashboard</h2>
+            <div class="small muted">Gestiona libros, usuarios y reseñas</div>
+          </div>
+
           <div style="display:flex;gap:12px;margin-top:12px;flex-wrap:wrap">
             <div style="flex:1;min-width:300px">
               <h4>Agregar libro</h4>
               <div style="display:flex;flex-direction:column;gap:8px">
-                <input id="newTitle" placeholder="Título del libro">
-                <input id="newImage" placeholder="URL de la imagen">
-                <textarea id="newDesc" placeholder="Breve descripción"></textarea>
-                <button id="btnAddBook" class="btn">Agregar libro</button>
+                <input id="newTitle" class="input" placeholder="Título del libro">
+                <input id="newImage" class="input" placeholder="URL de la imagen">
+                <textarea id="newDesc" class="input" placeholder="Breve descripción"></textarea>
+                <div style="display:flex;gap:8px">
+                  <button id="btnAddBook" class="btn">Agregar libro</button>
+                  <button id="btnSeed" class="btn ghost">Restablecer seed</button>
+                </div>
               </div>
             </div>
 
             <div style="flex:2;min-width:320px">
               <h4>Usuarios registrados</h4>
-              <div style="max-height:220px;overflow:auto;margin-top:8px">
+              <div style="max-height:240px;overflow:auto;margin-top:8px">
                 <table id="usersTable"><thead><tr><th>Nombre</th><th>Email</th><th>Puntos</th><th>Libros</th></tr></thead><tbody></tbody></table>
               </div>
             </div>
@@ -170,26 +259,39 @@
     <footer style="margin-top:18px;text-align:center;color:rgba(107,79,59,0.6);font-size:13px">Diseñado para Biblioteca CETIS 54 — &copy; Programa de Lectura</footer>
   </div>
 
-  <!-- Modal Login / Register / Review -->
-  <div class="modal" id="modal">
-    <div class="card panel">
+  <!-- Modal (reutilizable) -->
+  <div class="modal" id="modal" aria-hidden="true">
+    <div class="card panel" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
       <div style="display:flex;justify-content:space-between;align-items:center">
         <h3 id="modalTitle">Iniciar sesión</h3>
-        <button id="closeModal" class="ghost">Cerrar</button>
+        <button id="closeModal" class="btn ghost flat" aria-label="Cerrar">Cerrar</button>
       </div>
 
       <div id="modalBody" style="margin-top:12px">
-        <!-- content injected by JS -->
+        <!-- contenido inyectado por JS -->
       </div>
     </div>
   </div>
 
+  <!-- toast -->
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+  <!-- confetti canvas -->
+  <canvas id="confettiCanvas"></canvas>
+
   <script>
-    const API_URL = '';
+    /* -------------------------------
+       Conserva la lógica original; he enriquecido la UI.
+       Cambios importantes:
+       - Añadí contadores, progreso visual, toasts y confetti al sumar puntos.
+       - Mantengo todas las IDs originales para compatibilidad con tu backend/API (API_URL).
+       - Si usas API_URL, sigue funcionando igual.
+       ------------------------------- */
+
+    const API_URL = ''; // deja igual si usas localStorage
     const POINTS_PER_REVIEW = 10;
     const POINTS_TO_REDEEM = 100;
 
-    // estado
     let state = {
       user: null,
       books: [],
@@ -197,7 +299,6 @@
       users: []
     };
 
-    // seed con 10 libros mínimos
     const seedBooks = [
       {id: 'b1', title:'Cien años de soledad', img:'https://www.rae.es/sites/default/files/styles/obra_portada_ficha/public/portada_cien_anos_de_soledad_0.jpg?itok=DDV1xNqg', desc:'Gabriel García Márquez'},
       {id: 'b2', title:'El principito', img:'https://picsum.photos/seed/2/500/300', desc:'Antoine de Saint-Exupéry'},
@@ -211,150 +312,260 @@
       {id: 'b10', title:'Crónica de una muerte anunciada', img:'https://picsum.photos/seed/10/500/300', desc:'Gabriel García Márquez'}
     ];
 
-    // helpers
+    // helpers DOM
     const $ = sel => document.querySelector(sel);
     const $$ = sel => Array.from(document.querySelectorAll(sel));
+    const toastEl = $('#toast');
+
+    // confetti minimal (canvas)
+    const confettiCanvas = document.getElementById('confettiCanvas');
+    const confettiCtx = confettiCanvas.getContext('2d');
+    let confettiParticles = [];
+    function resizeConfetti(){ confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight; }
+    window.addEventListener('resize', resizeConfetti);
+    resizeConfetti();
+
+    function spawnConfetti(amount=60){
+      for(let i=0;i<amount;i++){
+        confettiParticles.push({
+          x: Math.random()*confettiCanvas.width,
+          y: -20 - Math.random()*100,
+          vx: Math.random()*6-3,
+          vy: Math.random()*4+2,
+          r: Math.random()*6+4,
+          rot: Math.random()*360,
+          color: `hsl(${Math.random()*60+20}, 80%, 60%)`,
+          g: Math.random()*0.98+0.01
+        });
+      }
+      if(!confettiLooping) runConfetti();
+    }
+
+    let confettiLooping = false;
+    function runConfetti(){
+      confettiLooping = true;
+      const step = ()=>{
+        confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+        confettiParticles.forEach((p,i)=>{
+          p.x += p.vx; p.y += p.vy; p.vy += 0.08; p.rot += p.vx*2;
+          confettiCtx.save();
+          confettiCtx.translate(p.x,p.y);
+          confettiCtx.rotate(p.rot*Math.PI/180);
+          confettiCtx.fillStyle = p.color;
+          confettiCtx.fillRect(-p.r/2, -p.r/2, p.r, p.r*0.65);
+          confettiCtx.restore();
+          if(p.y > confettiCanvas.height + 40){ confettiParticles.splice(i,1); }
+        });
+        if(confettiParticles.length>0) requestAnimationFrame(step);
+        else { confettiLooping = false; confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); }
+      };
+      requestAnimationFrame(step);
+    }
+
+    // toast helper
+    function showToast(msg, ms=3000){
+      toastEl.textContent = msg;
+      toastEl.classList.add('show');
+      setTimeout(()=>{ toastEl.classList.remove('show'); }, ms);
+    }
 
     function init(){
-      // apply seed
       state.books = seedBooks.slice();
-
-      // ui hooks
-      document.getElementById('openAuth').addEventListener('click', openLogin);
-      document.getElementById('closeModal').addEventListener('click', closeModal);
-      document.getElementById('btnRefresh').addEventListener('click', refreshBooks);
-      document.getElementById('btnSearch').addEventListener('click', doSearch);
-      document.getElementById('searchInput').addEventListener('keyup', e=>{ if(e.key==='Enter') doSearch(); });
+      // Hooks
+      $('#openAuth').addEventListener('click', openLogin);
+      $('#closeModal').addEventListener('click', closeModal);
+      $('#btnRefresh').addEventListener('click', refreshBooks);
+      $('#btnSearch').addEventListener('click', doSearch);
+      $('#searchInput').addEventListener('keyup', e=>{ if(e.key==='Enter') doSearch(); });
 
       // nav
-      $$('nav button').forEach(btn=>btn.addEventListener('click', (ev)=>{ switchView(ev.target.dataset.view); $$('nav button').forEach(b=>b.classList.remove('active')); ev.target.classList.add('active')}));
+      $$('nav button').forEach(btn=>{
+        btn.addEventListener('click', (ev)=>{
+          switchView(ev.target.dataset.view);
+          $$('nav button').forEach(b=>b.classList.remove('active'));
+          ev.target.classList.add('active');
+        });
+      });
 
-      // admin
-      document.getElementById('btnAddBook').addEventListener('click', adminAddBook);
+      // admin controls
+      $('#btnAddBook').addEventListener('click', adminAddBook);
+      $('#btnSeed').addEventListener('click', ()=>{ state.books = seedBooks.slice(); renderBooks(); showToast('Seed restablecido'); });
 
       // redeem
-      document.getElementById('btnRedeem').addEventListener('click', redeemBook);
+      $('#btnRedeem').addEventListener('click', redeemBook);
 
       // initial render
       renderBooks();
       renderUserBadge();
-      document.getElementById('pointsPerReview').textContent = POINTS_PER_REVIEW;
-      document.getElementById('pointsToRedeem').textContent = POINTS_TO_REDEEM;
+      $('#pointsPerReview').textContent = POINTS_PER_REVIEW;
+      $('#pointsToRedeem').textContent = POINTS_TO_REDEEM;
 
-      // try load session
+      // load session/local
       const stored = localStorage.getItem('cetis_user');
       if(stored) state.user = JSON.parse(stored);
       refreshAllData();
     }
 
+    // Modal helpers
     function openLogin(){
-      const body = document.getElementById('modalBody');
+      const body = $('#modalBody');
       body.innerHTML = `
-        <div style="display:flex;gap:8px;">
-          <div style="flex:1">
+        <div class="split">
+          <div>
             <h4>Iniciar sesión</h4>
-            <input id="loginEmail" placeholder="Email"><br><br>
-            <input id="loginPass" type="password" placeholder="Contraseña"><br><br>
-            <button id="doLogin" class="btn">Iniciar sesión</button>
+            <input id="loginEmail" class="input" placeholder="Email"><br><br>
+            <input id="loginPass" class="input" type="password" placeholder="Contraseña"><br><br>
+            <div style="display:flex;gap:8px">
+              <button id="doLogin" class="btn">Iniciar sesión</button>
+              <button id="openRegister" class="btn ghost">Crear cuenta</button>
+            </div>
           </div>
-          <div style="flex:1">
-            <h4>Registro</h4>
-            <input id="regName" placeholder="Nombre"><br>
-            <input id="regEmail" placeholder="Email"><br>
-            <input id="regPass" type="password" placeholder="Contraseña"><br><br>
-            <button id="doRegister" class="btn ghost">Registrarme</button>
+          <div style="border-left:1px dashed rgba(107,79,59,0.04);padding-left:12px">
+            <h4>Beneficios</h4>
+            <ul style="padding-left:16px;margin-top:6px">
+              <li>Gana <strong>${POINTS_PER_REVIEW} pts</strong> por reseña</li>
+              <li>Canjea libros con <strong>${POINTS_TO_REDEEM} pts</strong></li>
+              <li>Control de tus reseñas y recompensas</li>
+            </ul>
+            <div style="height:8px"></div>
+            <div class="small muted">Inicia sesión para participar en el programa.</div>
           </div>
         </div>
       `;
-
-      document.getElementById('modalTitle').textContent = 'Cuenta';
-      document.getElementById('modal').classList.add('open');
-
-      setTimeout(()=>{
-        document.getElementById('doLogin').addEventListener('click', userLogin);
-        document.getElementById('doRegister').addEventListener('click', userRegister);
-      },50);
+      $('#modalTitle').textContent = 'Cuenta';
+      $('#modal').classList.add('open');
+      $('#doLogin').addEventListener('click', userLogin);
+      $('#openRegister').addEventListener('click', openRegisterForm);
     }
-    function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+    function openRegisterForm(){
+      const body = $('#modalBody');
+      body.innerHTML = `
+        <div>
+          <h4>Registro</h4>
+          <input id="regName" class="input" placeholder="Nombre"><br><br>
+          <input id="regEmail" class="input" placeholder="Email"><br><br>
+          <input id="regPass" class="input" type="password" placeholder="Contraseña"><br><br>
+          <div style="display:flex;gap:8px">
+            <button id="doRegister" class="btn ghost">Registrarme</button>
+            <button id="backToLogin" class="btn">Volver</button>
+          </div>
+        </div>
+      `;
+      $('#doRegister').addEventListener('click', userRegister);
+      $('#backToLogin').addEventListener('click', openLogin);
+    }
+    function closeModal(){ $('#modal').classList.remove('open'); $('#modal').setAttribute('aria-hidden', 'true'); }
 
+    // Auth (local / API compatible)
     function userLogin(){
-      const email = document.getElementById('loginEmail').value.trim();
-      const pass = document.getElementById('loginPass').value || '';
-      if(!email){alert('Ingresa email');return}
+      const email = $('#loginEmail').value?.trim();
+      const pass = $('#loginPass').value || '';
+      if(!email){ alert('Ingresa email'); return; }
       if(API_URL){
         apiPost({action:'login', email}).then(res=>{
           if(res.status==='ok'){
             state.user = res.data;
             localStorage.setItem('cetis_user', JSON.stringify(state.user));
             closeModal(); renderUserBadge(); refreshAllData();
+            showToast('Bienvenido ' + (state.user.nombre || state.user.email));
           } else alert(res.msg || 'No encontrado');
         });
       } else {
         let u = state.users.find(x=>x.email===email && (x.pass? x.pass === pass : true));
-        if(!u){ alert('Usuario no encontrado. Regístrate.'); return }
+        if(!u){ alert('Usuario no encontrado. Regístrate.'); return; }
         state.user = u; localStorage.setItem('cetis_user', JSON.stringify(u)); closeModal(); renderUserBadge(); refreshAllData();
+        showToast('Sesión iniciada — ' + (u.nombre||u.email));
       }
     }
 
     function userRegister(){
-      const name = document.getElementById('regName').value.trim();
-      const email = document.getElementById('regEmail').value.trim();
-      const pass = document.getElementById('regPass').value || '';
+      const name = $('#regName').value?.trim();
+      const email = $('#regEmail').value?.trim();
+      const pass = $('#regPass').value || '';
       if(!name || !email) { alert('Completa nombre y email'); return }
       if(API_URL){
         apiPost({action:'registrarUsuario', nombre:name, email}).then(res=>{
-          if(res.status==='ok'){ state.user = {userId: res.data.userId, nombre: name, email, puntos:0, librosLeidos:0 }; localStorage.setItem('cetis_user', JSON.stringify(state.user)); closeModal(); renderUserBadge(); refreshAllData(); }
-          else alert(res.msg||'error');
+          if(res.status==='ok'){
+            state.user = {userId: res.data.userId, nombre: name, email, puntos:0, librosLeidos:0 };
+            localStorage.setItem('cetis_user', JSON.stringify(state.user));
+            closeModal(); renderUserBadge(); refreshAllData(); showToast('Registrado correctamente');
+          } else alert(res.msg||'error');
         });
       } else {
         const u = {userId:'u'+Date.now(), nombre:name, email, pass, puntos:0, librosLeidos:0};
         state.users.push(u);
+        localStorage.setItem('cetis_users', JSON.stringify(state.users));
         state.user = u; localStorage.setItem('cetis_user', JSON.stringify(u)); closeModal(); renderUserBadge(); refreshAllData();
+        showToast('Cuenta creada — ' + name);
       }
     }
 
     function renderUserBadge(){
-      const el = document.getElementById('userBadge');
+      const el = $('#userBadge');
       if(state.user){
-        el.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div style='font-weight:700;color:var(--accent)'>${state.user.nombre||state.user.email}</div><button id='logout' class='ghost'>Salir</button></div>`;
-        document.getElementById('logout').addEventListener('click', ()=>{ state.user=null; localStorage.removeItem('cetis_user'); renderUserBadge(); });
+        el.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div style='font-weight:700;color:var(--accent)'>${state.user.nombre||state.user.email}</div><button id='logout' class='ghost flat' title='Cerrar sesión'>Salir</button></div>`;
+        $('#logout').addEventListener('click', ()=>{ state.user=null; localStorage.removeItem('cetis_user'); renderUserBadge(); renderMyAccount(); showToast('Sesión finalizada'); });
       } else {
         el.innerHTML = '';
       }
     }
 
+    // Render libro (mejorado)
     function renderBooks(filter){
-      const grid = document.getElementById('booksGrid'); grid.innerHTML = '';
+      const grid = $('#booksGrid'); grid.innerHTML = '';
       const list = state.books.filter(b=>!filter || b.title.toLowerCase().includes(filter.toLowerCase()));
+      $('#booksCount').textContent = list.length;
       list.forEach(b=>{
         const div = document.createElement('div'); div.className='book';
-        div.innerHTML = `<img src="${b.img}" alt="${b.title}"><h3>${b.title}</h3><p>${b.desc || ''}</p>
-          <div class='meta'><small>Veces leído: ${b.reads||0}</small><div><button class='btn ghost' data-id='${b.id}'>Reseñar</button></div></div>`;
+        div.innerHTML = `
+          <img class="cover" src="${b.img}" alt="${escapeHtml(b.title)}">
+          <div>
+            <h3 class="truncate">${escapeHtml(b.title)}</h3>
+            <p class="truncate">${escapeHtml(b.desc || '')}</p>
+          </div>
+          <div class="meta">
+            <small class="small muted">Veces leído: ${b.reads||0}</small>
+            <div class="actions">
+              <button class="ghost-small" title="Ver detalles" data-id="${b.id}" data-action="view">Ver</button>
+              <button class="btn ghost" data-id='${b.id}' data-action="review">Reseñar</button>
+            </div>
+          </div>
+        `;
         grid.appendChild(div);
-        div.querySelector('button').addEventListener('click', ()=>openReviewModal(b));
+
+        // handlers
+        div.querySelector('[data-action="review"]').addEventListener('click', ()=>openReviewModal(b));
+        div.querySelector('[data-action="view"]').addEventListener('click', ()=>openViewInNewTab(b));
       });
     }
 
+    function openViewInNewTab(book){
+      // abre la imagen del libro en otra pestaña como vista rápida (puedes cambiar a una página de detalle)
+      window.open(book.img, '_blank');
+    }
+
     function openReviewModal(book){
-      if(!state.user){ openLogin(); return }
-      const body = document.getElementById('modalBody');
+      if(!state.user){ openLogin(); return; }
+      const body = $('#modalBody');
       body.innerHTML = `
-        <h4>Reseña — ${book.title}</h4>
-        <textarea id='reviewText' placeholder='Escribe tu reseña...' rows="6"></textarea>
-        <div style='margin-top:8px;display:flex;gap:8px'>
-          <button id='sendReview' class='btn'>Enviar reseña (+${POINTS_PER_REVIEW} puntos)</button>
-          <button id='cancelReview' class='ghost'>Cancelar</button>
+        <div>
+          <h4>Reseña — ${escapeHtml(book.title)}</h4>
+          <textarea id='reviewText' class="input" placeholder='Escribe tu reseña...' rows="6"></textarea>
+          <div style='margin-top:8px;display:flex;gap:8px;align-items:center'>
+            <button id='sendReview' class='btn'>Enviar reseña (+${POINTS_PER_REVIEW} pts)</button>
+            <button id='cancelReview' class='btn ghost'>Cancelar</button>
+          </div>
         </div>
       `;
-      document.getElementById('modalTitle').textContent = 'Reseña';
-      document.getElementById('modal').classList.add('open');
-      document.getElementById('cancelReview').addEventListener('click', closeModal);
-      document.getElementById('sendReview').addEventListener('click', ()=>submitReview(book));
+      $('#modalTitle').textContent = 'Reseña';
+      $('#modal').classList.add('open');
+      $('#cancelReview').addEventListener('click', closeModal);
+      $('#sendReview').addEventListener('click', ()=>submitReview(book));
     }
 
     function submitReview(book){
-      const text = document.getElementById('reviewText').value.trim();
-      if(!text){alert('Escribe algo');return}
+      const text = $('#reviewText').value.trim();
+      if(!text){ alert('Escribe algo'); return; }
       const payload = {action:'guardarResena', userId: state.user.userId || state.user.userId, libroId: book.id, texto: text};
       if(API_URL){
         apiPost(payload).then(res=>{
@@ -362,54 +573,104 @@
           else alert(res.msg||'error');
         });
       } else {
-        const r = {resenaId:'r'+Date.now(), userId: state.user.userId, libroId: book.id, texto:text, fecha: new Date()};
+        const r = {resenaId:'r'+Date.now(), userId: state.user.userId, libroId: book.id, texto:text, fecha: new Date().toISOString()};
         state.reviews.push(r);
+        // se suman puntos localmente
         state.user.puntos = (state.user.puntos||0) + POINTS_PER_REVIEW;
         state.user.librosLeidos = (state.user.librosLeidos||0) + 1;
+        // persistir usuarios si es local
+        const idx = state.users.findIndex(u=>u.userId === state.user.userId);
+        if(idx>=0) state.users[idx] = {...state.users[idx], puntos: state.user.puntos, librosLeidos: state.user.librosLeidos};
         localStorage.setItem('cetis_user', JSON.stringify(state.user));
-        alert('Reseña guardada localmente.');
-        closeModal(); refreshAllData();
+        localStorage.setItem('cetis_users', JSON.stringify(state.users));
+        localStorage.setItem('cetis_reviews', JSON.stringify(state.reviews));
+
+        closeModal();
+        // animación y feedback
+        showToast(`+${POINTS_PER_REVIEW} puntos obtenidos`);
+        animatePointsGain(POINTS_PER_REVIEW);
+        spawnConfetti(28);
+        refreshAllData();
       }
     }
 
     function adminAddBook(){
-      const title = document.getElementById('newTitle').value.trim();
-      const img = document.getElementById('newImage').value.trim() || 'https://picsum.photos/seed/'+Date.now()+'/500/300';
-      const desc = document.getElementById('newDesc').value.trim();
-      if(!title){ alert('Escribe título'); return }
+      const title = $('#newTitle').value.trim();
+      const img = $('#newImage').value.trim() || 'https://picsum.photos/seed/'+Date.now()+'/500/300';
+      const desc = $('#newDesc').value.trim();
+      if(!title){ alert('Escribe título'); return; }
       if(API_URL){
-        apiPost({action:'agregarLibro', nombre:title, imagen:img, descripcion:desc}).then(res=>{ if(res.status==='ok'){ alert('Libro agregado'); refreshAllData(); } else alert(res.msg||'error'); });
+        apiPost({action:'agregarLibro', nombre:title, imagen:img, descripcion:desc}).then(res=>{ if(res.status==='ok'){ showToast('Libro agregado'); refreshAllData(); } else alert(res.msg||'error'); });
       } else {
-        const book = {id:'b'+Date.now(), title, img, desc, reads:0}; state.books.push(book); renderBooks(); alert('Libro agregado localmente');
+        const book = {id:'b'+Date.now(), title, img, desc, reads:0}; state.books.push(book); renderBooks(); showToast('Libro agregado localmente');
       }
     }
 
-    function refreshBooks(){ renderBooks(document.getElementById('searchInput').value); }
-    function doSearch(){ renderBooks(document.getElementById('searchInput').value); }
+    function refreshBooks(){ renderBooks($('#searchInput').value); }
+    function doSearch(){ renderBooks($('#searchInput').value); }
 
-    function switchView(view){ $$('[data-view]').forEach(el=>el.style.display='none'); const sel = document.querySelector('[data-view="'+view+'"]'); if(sel) sel.style.display='block'; if(view==='miCuenta') renderMyAccount(); if(view==='admin') renderAdmin(); }
+    function switchView(view){
+      $$('[data-view]').forEach(el=>el.style.display='none');
+      const sel = document.querySelector('[data-view="'+view+'"]');
+      if(sel) sel.style.display='block';
+      if(view==='miCuenta') renderMyAccount();
+      if(view==='admin') renderAdmin();
+    }
 
-    function renderMyAccount(){ if(!state.user){ document.getElementById('meName').textContent='-'; document.getElementById('mePoints').textContent='0'; document.getElementById('meBooks').innerHTML=''; document.getElementById('myReviews').innerHTML=''; return }
-      document.getElementById('meName').textContent = state.user.nombre || state.user.email;
-      document.getElementById('mePoints').textContent = state.user.puntos || 0;
-      const mb = document.getElementById('meBooks'); mb.innerHTML='';
+    function renderMyAccount(){
+      if(!state.user){
+        $('#meName').textContent='-'; $('#mePoints').textContent='0'; $('#meBooks').innerHTML=''; $('#myReviews').innerHTML='';
+        $('#progressBar').style.width = '0%'; $('#pointsPercent').textContent = '0'; $('#meBooksCount').textContent = '0';
+        return;
+      }
+      $('#meName').textContent = state.user.nombre || state.user.email;
+      $('#mePoints').textContent = state.user.puntos || 0;
+      $('#meBooksCount').textContent = state.user.librosLeidos || 0;
+
+      const mb = $('#meBooks'); mb.innerHTML='';
       const userReviews = state.reviews.filter(r=>r.userId==state.user.userId);
-      userReviews.forEach(r=>{ const book = state.books.find(b=>b.id==r.libroId); const li = document.createElement('li'); li.textContent = (book?book.title:'Libro') + ' — ' + r.texto; mb.appendChild(li); });
-      const mr = document.getElementById('myReviews'); mr.innerHTML = userReviews.map(r=>`<div style='background:#fff9f5;padding:8px;border-radius:8px;margin-bottom:6px'><strong>${(state.books.find(b=>b.id==r.libroId)||{title:'-'}).title}</strong><div style='font-size:13px'>${r.texto}</div></div>`).join('');
+      userReviews.forEach(r=>{
+        const book = state.books.find(b=>b.id==r.libroId);
+        const li = document.createElement('li'); li.textContent = (book?book.title:'Libro') + ' — ' + r.texto;
+        mb.appendChild(li);
+      });
+
+      const mr = $('#myReviews'); mr.innerHTML = userReviews.map(r=>`<div class='review-card'><strong>${(state.books.find(b=>b.id==r.libroId)||{title:'-' }).title}</strong><div class='small' style='margin-top:6px'>${r.texto}</div></div>`).join('');
+
+      // progreso
+      const percent = Math.min(100, Math.round(((state.user.puntos||0) / POINTS_TO_REDEEM) * 100));
+      $('#progressBar').style.width = percent + '%';
+      $('#pointsPercent').textContent = percent;
     }
 
-    function renderAdmin(){ const tbody = document.querySelector('#usersTable tbody'); tbody.innerHTML='';
-      state.users.forEach(u=>{ const tr = document.createElement('tr'); tr.innerHTML=`<td>${u.nombre}</td><td>${u.email}</td><td>${u.puntos||0}</td><td>${u.librosLeidos||0}</td>`; tbody.appendChild(tr); });
-      const ar = document.getElementById('adminReviews'); ar.innerHTML = state.reviews.map(r=>`<div style='background:#fff9f5;padding:8px;border-radius:8px;margin-bottom:6px'><strong>${(state.users.find(u=>u.userId==r.userId)||{nombre:'-'}).nombre}</strong> sobre <em>${(state.books.find(b=>b.id==r.libroId)||{title:'-'}).title}</em><div style='font-size:13px'>${r.texto}</div></div>`).join('');
+    function renderAdmin(){
+      const tbody = document.querySelector('#usersTable tbody'); tbody.innerHTML='';
+      state.users.forEach(u=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${u.nombre}</td><td>${u.email}</td><td>${u.puntos||0}</td><td>${u.librosLeidos||0}</td>`;
+        tbody.appendChild(tr);
+      });
+      const ar = $('#adminReviews'); ar.innerHTML = state.reviews.map(r=>`<div class='review-card'><strong>${(state.users.find(u=>u.userId==r.userId)||{nombre:'-'}).nombre}</strong> sobre <em>${(state.books.find(b=>b.id==r.libroId)||{title:'-'}).title}</em><div class='small' style='margin-top:6px'>${r.texto}</div></div>`).join('');
     }
 
-    function redeemBook(){ if(!state.user){ openLogin(); return }
-      if((state.user.puntos||0) < POINTS_TO_REDEEM){ alert('No tienes suficientes puntos'); return }
-      const available = state.books; const chosen = prompt('Escribe el título exacto del libro que quieres canjear (ver catálogo)');
+    function redeemBook(){
+      if(!state.user){ openLogin(); return; }
+      if((state.user.puntos||0) < POINTS_TO_REDEEM){ alert('No tienes suficientes puntos'); return; }
+      const available = state.books;
+      const chosen = prompt('Escribe el título exacto del libro que quieres canjear (ver catálogo)');
       if(!chosen) return;
-      const book = available.find(b=>b.title.toLowerCase()===chosen.toLowerCase()); if(!book){ alert('No encontrado'); return }
+      const book = available.find(b=>b.title.toLowerCase()===chosen.toLowerCase());
+      if(!book){ alert('No encontrado'); return; }
       if(API_URL){ apiPost({action:'guardarCanje', userId: state.user.userId, libroId: book.id}).then(res=>{ if(res.status==='ok'){ alert('Canje registrado'); refreshAllData(); } else alert(res.msg||'error'); }); }
-      else { state.user.puntos -= POINTS_TO_REDEEM; localStorage.setItem('cetis_user', JSON.stringify(state.user)); alert('Canje realizado localmente.'); renderMyAccount(); }
+      else {
+        state.user.puntos -= POINTS_TO_REDEEM;
+        const idx = state.users.findIndex(u=>u.userId === state.user.userId);
+        if(idx>=0) state.users[idx] = {...state.users[idx], puntos: state.user.puntos};
+        localStorage.setItem('cetis_user', JSON.stringify(state.user));
+        localStorage.setItem('cetis_users', JSON.stringify(state.users));
+        showToast('Canje realizado correctamente');
+        renderMyAccount();
+      }
     }
 
     async function apiPost(payload){
@@ -424,6 +685,8 @@
       if(!API_URL){
         const lu = localStorage.getItem('cetis_users'); state.users = lu?JSON.parse(lu):[];
         const lr = localStorage.getItem('cetis_reviews'); state.reviews = lr?JSON.parse(lr):[];
+        // If state.books empty, use seed
+        if(!state.books || state.books.length===0) state.books = seedBooks.slice();
         renderBooks(); renderUserBadge(); renderMyAccount(); renderAdmin(); return;
       }
       Promise.all([
@@ -431,30 +694,35 @@
         apiPost({action:'listarUsuarios'}).catch(()=>({status:'error'})),
         apiPost({action:'listarResenas'}).catch(()=>({status:'error'}))
       ]).then(([lb,lu,lr])=>{
-        if(lb && lb.status==='ok'){
-          const rows = lb.data;
-          const books = [];
-          if(Array.isArray(rows)){
-            rows.forEach(r=>{
-              if(Array.isArray(r)){
-                const [id,nombre,imagen,descripcion,reads] = r;
-                if(id && nombre) books.push({id: id.toString(), title: nombre.toString(), img: imagen||'https://picsum.photos/seed/'+Math.random()+'/500/300', desc: descripcion||'', reads: parseInt(reads)||0});
-              }
-            });
-          }
-          if(books.length) state.books = books;
-          else state.books = seedBooks;
-        }
-        if(lu && lu.status==='ok'){
-          const rows = lu.data; const users = [];
-          if(Array.isArray(rows)) rows.forEach(r=>{ if(Array.isArray(r)){ const [id,nombre,email,puntos,libros] = r; if(id) users.push({userId:id.toString(), nombre: nombre||email, email: email||'', puntos: parseInt(puntos)||0, librosLeidos: parseInt(libros)||0}); } }); state.users = users;
-        }
-        if(lr && lr.status==='ok'){
-          const rows = lr.data; const reviews = [];
-          if(Array.isArray(rows)) rows.forEach(r=>{ if(Array.isArray(r)){ const [id,userId,libroId,texto,fecha] = r; if(id) reviews.push({resenaId:id.toString(), userId: userId?userId.toString():'', libroId: libroId?libroId.toString():'', texto: texto||'', fecha}); } }); state.reviews = reviews;
-        }
+        if(lb && lb.status==='ok'){ const rows = lb.data; const books = []; if(Array.isArray(rows)) rows.forEach(r=>{ if(Array.isArray(r)){ const [id,nombre,imagen,descripcion,reads] = r; if(id && nombre) books.push({id: id.toString(), title: nombre.toString(), img: imagen||'https://picsum.photos/seed/'+Math.random()+'/500/300', desc: descripcion||'', reads: parseInt(reads)||0}); } }); if(books.length) state.books = books; else state.books = seedBooks; }
+        if(lu && lu.status==='ok'){ const rows = lu.data; const users = []; if(Array.isArray(rows)) rows.forEach(r=>{ if(Array.isArray(r)){ const [id,nombre,email,puntos,libros] = r; if(id) users.push({userId:id.toString(), nombre: nombre||email, email: email||'', puntos: parseInt(puntos)||0, librosLeidos: parseInt(libros)||0}); } }); state.users = users; }
+        if(lr && lr.status==='ok'){ const rows = lr.data; const reviews = []; if(Array.isArray(rows)) rows.forEach(r=>{ if(Array.isArray(r)){ const [id,userId,libroId,texto,fecha] = r; if(id) reviews.push({resenaId:id.toString(), userId: userId?userId.toString():'', libroId: libroId?libroId.toString():'', texto: texto||'', fecha}); } }); state.reviews = reviews; }
         renderBooks(); renderUserBadge(); renderMyAccount(); renderAdmin();
       }).catch((e)=>{ console.warn('error refreshing', e); renderBooks(); renderAdmin(); renderMyAccount(); });
+    }
+
+    // pequeñas utilidades UX
+    function escapeHtml(str){ return (str+'').replace(/[&<>"']/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s])); }
+
+    // animación de puntos (flotante)
+    function animatePointsGain(points){
+      const el = document.createElement('div');
+      el.style.position='fixed';
+      el.style.right = '40px';
+      el.style.bottom = '120px';
+      el.style.padding='8px 12px';
+      el.style.background='linear-gradient(90deg,var(--accent),var(--accent-2))'.replace('--accent', getComputedStyle(document.documentElement).getPropertyValue('--accent'));
+      el.style.color='white';
+      el.style.borderRadius='12px';
+      el.style.boxShadow='0 10px 30px rgba(0,0,0,0.12)';
+      el.style.fontWeight='700';
+      el.style.transform='translateY(0)';
+      el.style.transition='transform 800ms cubic-bezier(.2,.9,.3,1), opacity 600ms';
+      el.textContent = `+${points} pts`;
+      document.body.appendChild(el);
+      requestAnimationFrame(()=>{ el.style.transform='translateY(-90px)'; el.style.opacity='1'; });
+      setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateY(-140px)'; }, 1400);
+      setTimeout(()=>{ el.remove(); }, 2200);
     }
 
     // inicializa
