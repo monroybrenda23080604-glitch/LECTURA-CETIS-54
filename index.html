@@ -4,6 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>Biblioteca CETIS 54 — Programa de Lectura</title>
+  <!-- ÚNICA API externa permitida: fuente -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
   <style>
     /* ======================
@@ -12,19 +13,17 @@
     :root{
       --bg-1: #fff8f4;
       --bg-2: #fff2ea;
-      --card: rgba(255,255,255,0.82);
-      --glass: rgba(255,255,255,0.65);
+      --card: rgba(255,255,255,0.92);
+      --glass: rgba(255,255,255,0.7);
       --accent-1: #ff7a59;
       --accent-2: #ffb86b;
       --accent-3: #ffd4b2;
       --muted: #6b4f3b;
       --muted-2: rgba(107,79,59,0.65);
-      --radius: 16px;
+      --radius: 14px;
       --shadow-1: 0 8px 28px rgba(107,79,59,0.10);
       --shadow-2: 0 18px 50px rgba(107,79,59,0.12);
       --glass-border: rgba(107,79,59,0.06);
-      --success: #2ecb84;
-      --danger: #ff6b6b;
       --transition: 260ms cubic-bezier(.2,.9,.3,1);
       --max-width: 1200px;
     }
@@ -47,11 +46,7 @@
     .btn.ghost{background:transparent;border:1px solid var(--glass-border);color:var(--muted);box-shadow:none;font-weight:600}
     /* background shapes (touristic warm feel) */
     .bg-shapes{position:fixed;left:-8%;top:-6%;width:120vw;height:120vh;pointer-events:none;z-index:0;overflow:hidden}
-    .shape{
-      position:absolute;border-radius:42%;
-      filter:blur(48px);opacity:0.28;transform:rotate(15deg);
-      mix-blend-mode:soft-light;
-    }
+    .shape{ position:absolute;border-radius:42%;filter:blur(48px);opacity:0.28;transform:rotate(15deg);mix-blend-mode:soft-light;}
     .shape.s1{width:520px;height:520px;left:-120px;top:-160px;background:linear-gradient(135deg,var(--accent-1),var(--accent-3));}
     .shape.s2{width:420px;height:420px;right:-80px;top:20px;background:linear-gradient(135deg,var(--accent-2),#fff0e6);opacity:0.24}
     .shape.s3{width:320px;height:320px;left:20%;bottom:-120px;background:linear-gradient(135deg,#ffd6b6,#fff1ea);opacity:0.18}
@@ -114,6 +109,7 @@
     /* subtle utilities */
     .muted-sm{font-size:13px;color:var(--muted-2)}
     .tiny{font-size:12px;color:var(--muted-2)}
+    .small-muted{font-size:12px;color:var(--muted-2)}
   </style>
 </head>
 <body>
@@ -154,7 +150,7 @@
         <nav aria-label="Secciones">
           <button data-view="catalog" class="active">📚 Catálogo</button>
           <button data-view="miCuenta">👤 Mi cuenta</button>
-          <button data-view="admin">⚙️ Admin</button>
+          <button id="navAdminBtn" data-view="admin" style="display:none">⚙️ Admin</button>
         </nav>
 
         <div style="margin-top:14px" class="muted-sm">Puntos por reseña: <strong id="pointsPerReview">10</strong></div>
@@ -296,606 +292,639 @@
   <canvas id="confettiCanvas"></canvas>
 
   <script>
-    /*******************************
-     * App constants & state
-     *******************************/
-    const API_URL = 'https://script.google.com/macros/s/AKfycbzmViFTXevl0jhvBfQkXGopB_r_nOU7Svfh1XIJ5O8-EbIQVwzSfCGK4aRHeOfOVMk7/exec'; // si usas backend pon aquí la url
-    const POINTS_PER_REVIEW = 10;
-    const POINTS_TO_REDEEM = 100;
+    (function(){
+      'use strict';
 
-    let state = {
-      user: null,
-      books: [],
-      reviews: [],
-      users: [],
-      favorites: []
-    };
+      /* ================
+         Constants & state
+         ================ */
+      const POINTS_PER_REVIEW = 10;
+      const POINTS_TO_REDEEM = 100;
 
-    // seed libros (calidez - turística)
-    const seedBooks = [
-      {id:'b1', title:'Cien años de soledad', img:'https://www.rae.es/sites/default/files/styles/obra_portada_ficha/public/portada_cien_anos_de_soledad_0.jpg?itok=DDV1xNqg', desc:'Gabriel García Márquez', reads:12},
-      {id:'b2', title:'El principito', img:'https://picsum.photos/seed/2/600/380', desc:'Antoine de Saint-Exupéry', reads:23},
-      {id:'b3', title:'La Odisea', img:'https://picsum.photos/seed/3/600/380', desc:'Homero', reads:8},
-      {id:'b4', title:'Don Quijote', img:'https://picsum.photos/seed/4/600/380', desc:'Miguel de Cervantes', reads:15},
-      {id:'b5', title:'1984', img:'https://picsum.photos/seed/5/600/380', desc:'George Orwell', reads:9},
-      {id:'b6', title:'El Hobbit', img:'https://picsum.photos/seed/6/600/380', desc:'J.R.R. Tolkien', reads:31},
-      {id:'b7', title:'Rayuela', img:'https://picsum.photos/seed/7/600/380', desc:'Julio Cortázar', reads:6},
-      {id:'b8', title:'La tregua', img:'https://picsum.photos/seed/8/600/380', desc:'Mario Benedetti', reads:10},
-      {id:'b9', title:'Ficciones', img:'https://picsum.photos/seed/9/600/380', desc:'Jorge Luis Borges', reads:7},
-      {id:'b10', title:'Crónica de una muerte anunciada', img:'https://picsum.photos/seed/10/600/380', desc:'Gabriel García Márquez', reads:11}
-    ];
-
-    /*******************************
-     * Helpers DOM
-     *******************************/
-    const $ = sel => document.querySelector(sel);
-    const $$ = sel => Array.from(document.querySelectorAll(sel));
-    const toastEl = $('#toast');
-
-    function showToast(msg, ms=2800){
-      toastEl.textContent = msg;
-      toastEl.classList.add('show');
-      toastEl.style.display = 'block';
-      setTimeout(()=>{ toastEl.classList.remove('show'); toastEl.style.display = 'none'; }, ms);
-    }
-
-    /*******************************
-     * Confetti (minimal canvas)
-     *******************************/
-    const confettiCanvas = $('#confettiCanvas');
-    const confettiCtx = confettiCanvas.getContext('2d');
-    let confettiParticles = [];
-    function resizeCanvas(){ confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight; }
-    window.addEventListener('resize', resizeCanvas);
-    resizeCanvas();
-
-    function spawnConfetti(amount=40){
-      for(let i=0;i<amount;i++){
-        confettiParticles.push({
-          x: Math.random()*confettiCanvas.width,
-          y: -20 - Math.random()*200,
-          vx: Math.random()*6 - 3,
-          vy: Math.random()*3 + 2,
-          size: Math.random()*8 + 4,
-          color: ['#ffd6b6','#ffb86b','#ff7a59','#ffe3d6'][Math.floor(Math.random()*4)],
-          rot: Math.random()*360
-        });
-      }
-      if(!confettiRunning) runConfetti();
-    }
-    let confettiRunning = false;
-    function runConfetti(){
-      confettiRunning = true;
-      const step = ()=>{
-        confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
-        confettiParticles.forEach((p, i) => {
-          p.x += p.vx; p.y += p.vy; p.vy += 0.04;
-          confettiCtx.save();
-          confettiCtx.translate(p.x,p.y);
-          confettiCtx.rotate(p.rot * Math.PI/180);
-          confettiCtx.fillStyle = p.color;
-          confettiCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.6);
-          confettiCtx.restore();
-          if(p.y > confettiCanvas.height + 40) confettiParticles.splice(i,1);
-        });
-        if(confettiParticles.length) requestAnimationFrame(step);
-        else { confettiRunning = false; confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); }
+      const STORAGE_KEYS = {
+        USERS: 'cetis_users_v2',
+        USER_SESSION: 'cetis_user_v2',
+        BOOKS: 'cetis_books_v2',
+        REWARDS: 'cetis_rewards_v2',
+        REVIEWS: 'cetis_reviews_v2',
+        FAVORITES: 'cetis_favorites_v2'
       };
-      requestAnimationFrame(step);
-    }
 
-    /*******************************
-     * INIT
-     *******************************/
-    function init(){
-      // seed
-      state.books = seedBooks.slice();
-      // load local data
-      const sUser = localStorage.getItem('cetis_user');
-      const sUsers = localStorage.getItem('cetis_users');
-      const sReviews = localStorage.getItem('cetis_reviews');
-      const sFav = localStorage.getItem('cetis_favorites');
-      if(sUser) state.user = JSON.parse(sUser);
-      state.users = sUsers? JSON.parse(sUsers) : [];
-      state.reviews = sReviews? JSON.parse(sReviews) : [];
-      state.favorites = sFav? JSON.parse(sFav) : [];
+      let state = {
+        user: null,
+        users: [],
+        books: [],
+        rewards: [],
+        reviews: [],
+        favorites: []
+      };
 
-      // hooks
-      $('#openAuth').addEventListener('click', openAuthModal);
-      $('#closeModal').addEventListener('click', closeModal);
-      $('#btnRefresh').addEventListener('click', ()=>{ refreshAllData(); showToast('Catálogo actualizado'); });
-      $('#btnSearch').addEventListener('click', doSearch);
-      $('#searchInput').addEventListener('keyup', e => { if(e.key==='Enter') doSearch(); });
+      /* ================
+         Seed data
+         ================ */
+      const seedBooks = [
+        { id:'b1', title:'Una corte de rosas y espinas (ACOTAR)', img:'https://picsum.photos/seed/acotar/600/380', desc:'Sarah J. Maas — Fantasía épica + romance intenso y criaturas fae.', reads:12 },
+        { id:'b2', title:'El príncipe cruel', img:'https://picsum.photos/seed/prince/600/380', desc:'Holly Black — Enemigos a amantes en un mundo de hadas peligrosas.', reads:9 },
+        { id:'b3', title:'Sombra y hueso', img:'https://picsum.photos/seed/sombra/600/380', desc:'Leigh Bardugo — Magia oscura, guerra y triángulo amoroso icónico.', reads:18 },
+        { id:'b4', title:'Trono de cristal', img:'https://picsum.photos/seed/trono/600/380', desc:'Sarah J. Maas — Asesina legendaria + magia + relaciones complejas.', reads:22 },
+        { id:'b5', title:'Caraval', img:'https://picsum.photos/seed/caraval/600/380', desc:'Stephanie Garber — Un juego mágico lleno de ilusiones y romance misterioso.', reads:14 },
+        { id:'b6', title:'La selección', img:'https://picsum.photos/seed/seleccion/600/380', desc:'Kiera Cass — Distopía + fantasía ligera con romance estilo reality.', reads:11 },
+        { id:'b7', title:'Serpent & Dove', img:'https://picsum.photos/seed/serpent/600/380', desc:'Shelby Mahurin — Bruja obligada a casarse con un cazador de brujas.', reads:8 },
+        { id:'b8', title:'Heartless', img:'https://picsum.photos/seed/heartless/600/380', desc:'Marissa Meyer — El romance trágico de la futura Reina de Corazones.', reads:7 },
+        { id:'b9', title:'El nombre del viento', img:'https://picsum.photos/seed/kvothe/600/380', desc:'Patrick Rothfuss — Fantasía épica con un romance poético.', reads:20 },
+        { id:'b10', title:'Hija de humo y hueso', img:'https://picsum.photos/seed/hija/600/380', desc:'Laini Taylor — Ángeles, demonios y un romance prohibido.', reads:13 }
+      ];
 
-      $$('nav button').forEach(btn => {
-        btn.addEventListener('click', ev => {
-          const view = ev.currentTarget.dataset.view;
-          switchView(view);
-          $$('nav button').forEach(b => b.classList.remove('active'));
-          ev.currentTarget.classList.add('active');
+      const seedRewards = [
+        { id:'r1', title:'La Reina Roja', img:'https://picsum.photos/seed/reina/600/380', desc:'Victoria Aveyard — Magia, rebelión y tensión romántica.', cost: POINTS_TO_REDEEM },
+        { id:'r2', title:'Cazadores de sombras', img:'https://picsum.photos/seed/cazadores/600/380', desc:'Cassandra Clare — Fantasía urbana y romances intensos.', cost: POINTS_TO_REDEEM },
+        { id:'r3', title:'El océano al final del camino', img:'https://picsum.photos/seed/oceano/600/380', desc:'Neil Gaiman — Fantasía oscura con toque nostálgico.', cost: POINTS_TO_REDEEM },
+        { id:'r4', title:'El Circo de la Noche', img:'https://picsum.photos/seed/circo/600/380', desc:'Erin Morgenstern — Dos magos destinados a enfrentarse y enamorarse.', cost: POINTS_TO_REDEEM },
+        { id:'r5', title:'La canción de Aquiles', img:'https://picsum.photos/seed/aquiles/600/380', desc:'Madeline Miller — Mitología griega + romance épico y desgarrador.', cost: POINTS_TO_REDEEM }
+      ];
+
+      /* ================
+         Helpers DOM
+         ================ */
+      const $ = s => document.querySelector(s);
+      const $$ = s => Array.from(document.querySelectorAll(s));
+      const toastEl = $('#toast');
+      const confettiCanvas = $('#confettiCanvas');
+      const confettiCtx = confettiCanvas.getContext('2d');
+
+      function showToast(msg, ms=2600){
+        toastEl.textContent = msg;
+        toastEl.classList.add('show');
+        toastEl.style.display = 'block';
+        setTimeout(()=>{ toastEl.classList.remove('show'); toastEl.style.display = 'none'; }, ms);
+      }
+
+      /* ================
+         Confetti
+         ================ */
+      let confettiParticles = [], confettiRunning = false;
+      function resizeCanvas(){ confettiCanvas.width = window.innerWidth; confettiCanvas.height = window.innerHeight; }
+      window.addEventListener('resize', resizeCanvas); resizeCanvas();
+      function spawnConfetti(n=30){
+        for(let i=0;i<n;i++){
+          confettiParticles.push({
+            x: Math.random()*confettiCanvas.width,
+            y: -20 - Math.random()*120,
+            vx: Math.random()*6 - 3,
+            vy: Math.random()*3 + 2,
+            size: Math.random()*8 + 4,
+            color: ['#ffd6b6','#ffb86b','#ff7a59','#ffe3d6'][Math.floor(Math.random()*4)],
+            rot: Math.random()*360
+          });
+        }
+        if(!confettiRunning) runConfetti();
+      }
+      function runConfetti(){
+        confettiRunning = true;
+        (function step(){
+          confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height);
+          confettiParticles.forEach((p,i) => {
+            p.x += p.vx; p.y += p.vy; p.vy += 0.04;
+            confettiCtx.save();
+            confettiCtx.translate(p.x,p.y);
+            confettiCtx.rotate(p.rot * Math.PI/180);
+            confettiCtx.fillStyle = p.color;
+            confettiCtx.fillRect(-p.size/2, -p.size/2, p.size, p.size*0.6);
+            confettiCtx.restore();
+            if(p.y > confettiCanvas.height + 40) confettiParticles.splice(i,1);
+          });
+          if(confettiParticles.length) requestAnimationFrame(step);
+          else { confettiRunning = false; confettiCtx.clearRect(0,0,confettiCanvas.width,confettiCanvas.height); }
+        })();
+      }
+
+      /* ================
+         Persistence
+         ================ */
+      function loadState(){
+        try {
+          const u = localStorage.getItem(STORAGE_KEYS.USERS);
+          const b = localStorage.getItem(STORAGE_KEYS.BOOKS);
+          const r = localStorage.getItem(STORAGE_KEYS.REWARDS);
+          const rev = localStorage.getItem(STORAGE_KEYS.REVIEWS);
+          const fav = localStorage.getItem(STORAGE_KEYS.FAVORITES);
+          const su = localStorage.getItem(STORAGE_KEYS.USER_SESSION);
+
+          state.users = u ? JSON.parse(u) : [];
+          state.books = b ? JSON.parse(b) : seedBooks.slice();
+          state.rewards = r ? JSON.parse(r) : seedRewards.slice();
+          state.reviews = rev ? JSON.parse(rev) : [];
+          state.favorites = fav ? JSON.parse(fav) : [];
+          state.user = su ? JSON.parse(su) : null;
+
+          // ensure admin exists
+          const adminEmail = 'admin@gmail.com';
+          let admin = state.users.find(x=>x.email === adminEmail);
+          if(!admin){
+            admin = { userId: 'admin-1', nombre: 'Administrador', email: adminEmail, pass: 'admin123', puntos:0, librosLeidos:0, isAdmin:true };
+            state.users.unshift(admin);
+            saveUsers();
+          } else {
+            if(!admin.isAdmin){ admin.isAdmin = true; saveUsers(); }
+          }
+
+          // ensure books/rewards saved if not present
+          if(!b) saveBooks();
+          if(!r) saveRewards();
+          saveSession();
+        } catch(e){
+          console.error('loadState error', e);
+        }
+      }
+
+      function saveUsers(){ localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(state.users)); }
+      function saveBooks(){ localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(state.books)); }
+      function saveRewards(){ localStorage.setItem(STORAGE_KEYS.REWARDS, JSON.stringify(state.rewards)); }
+      function saveReviews(){ localStorage.setItem(STORAGE_KEYS.REVIEWS, JSON.stringify(state.reviews)); }
+      function saveFavorites(){ localStorage.setItem(STORAGE_KEYS.FAVORITES, JSON.stringify(state.favorites)); }
+      function saveSession(){ localStorage.setItem(STORAGE_KEYS.USER_SESSION, JSON.stringify(state.user)); }
+
+      /* ================
+         Init & hooks
+         ================ */
+      function init(){
+        loadState();
+
+        // basic DOM hooks
+        $('#openAuth').addEventListener('click', ()=> openAuthModal('login'));
+        $('#closeModal').addEventListener('click', closeModal);
+        $('#btnRefresh').addEventListener('click', ()=> { refreshUI(); showToast('Catálogo actualizado'); });
+        $('#btnSearch').addEventListener('click', doSearch);
+        $('#searchInput').addEventListener('keyup', e => { if(e.key === 'Enter') doSearch(); });
+        $('#btnAddBook').addEventListener('click', adminAddBook);
+        $('#btnSeed').addEventListener('click', ()=> { state.books = seedBooks.slice(); saveBooks(); renderBooks(); showToast('Seed restablecido'); });
+        $('#btnRedeem').addEventListener('click', openRedeemModal);
+        $('#btnMyFavorites').addEventListener('click', ()=> { renderFavoritesModal(); openModalWithContent('Favoritos'); });
+
+        $$('nav button').forEach(btn => {
+          btn.addEventListener('click', ev => {
+            const view = ev.currentTarget.dataset.view;
+            switchView(view);
+            $$('nav button').forEach(b => b.classList.remove('active'));
+            ev.currentTarget.classList.add('active');
+          });
         });
-      });
 
-      $('#btnAddBook').addEventListener('click', adminAddBook);
-      $('#btnSeed').addEventListener('click', ()=>{ state.books = seedBooks.slice(); renderBooks(); showToast('Seed restablecido'); });
-      $('#btnRedeem').addEventListener('click', redeemBook);
-      $('#btnMyFavorites').addEventListener('click', ()=>{ renderFavoritesModal(); openModal('Favoritos', '') });
+        $('#navAdminBtn').addEventListener('click', ()=> switchView('admin'));
 
-      // initial render
-      document.getElementById('pointsPerReview').textContent = POINTS_PER_REVIEW;
-      document.getElementById('pointsToRedeem').textContent = POINTS_TO_REDEEM;
-      renderUserBadge();
-      renderBooks();
-      renderAdmin();
-    }
+        // initial UI
+        $('#pointsPerReview').textContent = POINTS_PER_REVIEW;
+        $('#pointsToRedeem').textContent = POINTS_TO_REDEEM;
+        renderUserBadge();
+        renderBooks();
+        renderAdmin();
+        switchView('catalog');
 
-    /*******************************
-     * VIEWS / RENDER
-     *******************************/
-    function renderUserBadge(){
-      const el = $('#userBadgeArea');
-      if(state.user){
-        el.innerHTML = `
-          <div style="display:flex;align-items:center;gap:8px">
-            <div style="font-weight:800;color:var(--accent-1)">${escapeHtml(state.user.nombre || state.user.email)}</div>
-            <div class="points-pill">${state.user.puntos || 0} pts</div>
-            <button id="logoutBtn" class="btn ghost" title="Cerrar sesión">Salir</button>
-          </div>
-        `;
-        $('#logoutBtn').addEventListener('click', ()=>{ state.user=null; localStorage.removeItem('cetis_user'); renderUserBadge(); renderMyAccount(); showToast('Sesión cerrada'); });
-      } else {
-        el.innerHTML = '';
-      }
-    }
-
-    function renderBooks(filter, sort='relevance'){
-      const grid = $('#booksGrid');
-      grid.innerHTML = '';
-      let list = state.books.slice();
-
-      if(filter) {
-        const q = filter.toLowerCase();
-        list = list.filter(b => (b.title + ' ' + (b.desc||'')).toLowerCase().includes(q));
+        window.addEventListener('keydown', e => { if(e.key === 'Escape') closeModal(); });
       }
 
-      if(sort === 'reads') list.sort((a,b)=> (b.reads||0) - (a.reads||0));
-      if(sort === 'title') list.sort((a,b)=> a.title.localeCompare(b.title));
+      /* ================
+         Rendering functions
+         ================ */
+      function renderUserBadge(){
+        const el = $('#userBadgeArea');
+        if(state.user){
+          el.innerHTML = `
+            <div style="display:flex;align-items:center;gap:8px">
+              <div style="font-weight:800;color:var(--accent-1)">${escapeHtml(state.user.nombre || state.user.email)}</div>
+              <div class="points-pill">${state.user.puntos || 0} pts</div>
+              <button id="logoutBtn" class="btn ghost" title="Cerrar sesión">Salir</button>
+            </div>
+          `;
+          $('#logoutBtn').addEventListener('click', ()=> logout());
+          $('#navAdminBtn').style.display = state.user.isAdmin ? 'block' : 'none';
+        } else {
+          el.innerHTML = '';
+          $('#navAdminBtn').style.display = 'none';
+        }
+      }
 
-      $('#booksCount').textContent = list.length;
+      function renderBooks(filter, sort='relevance'){
+        const grid = $('#booksGrid');
+        grid.innerHTML = '';
+        let list = state.books.slice();
 
-      list.forEach(b => {
-        const div = document.createElement('div');
-        div.className = 'card-book';
-        div.innerHTML = `
-          <div class="fav-floating">
-            <button class="icon-btn heart" data-id="${b.id}" aria-label="Favorito">
-              <span class="tiny">☆</span>
-            </button>
-          </div>
-          <img class="cover" src="${b.img}" alt="${escapeHtml(b.title)} portada">
-          <div><div class="title">${escapeHtml(b.title)}</div><div class="author">${escapeHtml(b.desc||'')}</div></div>
-          <div class="book-meta">
-            <div class="tiny muted-sm">Lecturas: <strong>${b.reads||0}</strong></div>
-            <div class="actions">
-              <button class="icon-btn" data-id="${b.id}" data-action="view" aria-label="Ver detalles">👁️</button>
-              <button class="btn" data-id="${b.id}" data-action="review">Reseñar</button>
+        if(filter){
+          const q = filter.toLowerCase();
+          list = list.filter(b => (b.title + ' ' + (b.desc||'')).toLowerCase().includes(q));
+        }
+
+        if(sort === 'reads') list.sort((a,b)=> (b.reads||0) - (a.reads||0));
+        if(sort === 'title') list.sort((a,b)=> a.title.localeCompare(b.title));
+
+        $('#booksCount').textContent = list.length;
+
+        list.forEach(b => {
+          const div = document.createElement('div');
+          div.className = 'card-book';
+          div.innerHTML = `
+            <div class="fav-floating">
+              <button class="icon-btn heart" data-id="${b.id}" aria-label="Favorito">
+                <span class="tiny">☆</span>
+              </button>
+            </div>
+            <img class="cover" src="${b.img}" alt="${escapeHtml(b.title)} portada">
+            <div><div class="title">${escapeHtml(b.title)}</div><div class="author">${escapeHtml(b.desc||'')}</div></div>
+            <div class="book-meta">
+              <div class="tiny muted-sm">Lecturas: <strong>${b.reads||0}</strong></div>
+              <div class="actions">
+                <button class="icon-btn" data-id="${b.id}" data-action="view" aria-label="Ver detalles">👁️</button>
+                <button class="btn" data-id="${b.id}" data-action="review">Reseñar</button>
+              </div>
+            </div>
+          `;
+          grid.appendChild(div);
+
+          // favorite toggle
+          const favBtn = div.querySelector('.heart');
+          if(state.favorites.includes(b.id)) favBtn.classList.add('active');
+          favBtn.addEventListener('click', ()=> { toggleFavorite(b.id, favBtn); });
+
+          // view & review
+          div.querySelector('[data-action="view"]').addEventListener('click', ()=> openBookDetail(b));
+          div.querySelector('[data-action="review"]').addEventListener('click', ()=> openReviewModal(b));
+        });
+      }
+
+      function renderAdmin(){
+        const tbody = document.querySelector('#usersTable tbody');
+        tbody.innerHTML = '';
+        state.users.forEach(u=>{
+          const tr = document.createElement('tr');
+          tr.innerHTML = `<td>${escapeHtml(u.nombre)}</td><td>${escapeHtml(u.email)}</td><td>${u.puntos||0}</td><td>${u.librosLeidos||0}</td>`;
+          tbody.appendChild(tr);
+        });
+
+        const ar = $('#adminReviews');
+        ar.innerHTML = '';
+        (state.reviews || []).forEach(r=>{
+          const u = state.users.find(x=>x.userId==r.userId) || {nombre:'-'};
+          const book = state.books.find(b=>b.id==r.libroId) || {title:'-'};
+          const d = document.createElement('div');
+          d.style.marginBottom = '8px';
+          d.style.padding = '10px';
+          d.style.borderRadius = '10px';
+          d.style.background = 'linear-gradient(180deg,#fffaf6,#fff6ef)';
+          d.innerHTML = `<strong>${escapeHtml(u.nombre)}</strong> sobre <em>${escapeHtml(book.title)}</em><div class="tiny muted-sm" style="margin-top:6px">${escapeHtml(r.texto)}</div>`;
+          ar.appendChild(d);
+        });
+      }
+
+      function renderMyAccount(){
+        if(!state.user){
+          $('#meName').textContent='-'; $('#mePoints').textContent='0'; $('#meBooks').innerHTML=''; $('#myReviews').innerHTML=''; $('#progressBar').style.width='0%'; $('#meBooksCount').textContent='0';
+          return;
+        }
+        $('#meName').textContent = state.user.nombre || state.user.email;
+        $('#mePoints').textContent = state.user.puntos || 0;
+        $('#meBooksCount').textContent = state.user.librosLeidos || 0;
+
+        const userReviews = (state.reviews || []).filter(r=> r.userId == state.user.userId);
+        const myList = $('#myReviews'); myList.innerHTML = '';
+        userReviews.forEach(r=>{
+          const book = state.books.find(b=>b.id==r.libroId) || {title:'-'};
+          const card = document.createElement('div');
+          card.style.marginBottom='8px'; card.style.padding='10px'; card.style.borderRadius='10px'; card.style.background='linear-gradient(180deg,#fffaf6,#fff6ef)';
+          card.innerHTML = `<strong>${escapeHtml(book.title)}</strong><div class="tiny muted-sm" style="margin-top:6px">${escapeHtml(r.texto)}</div>`;
+          myList.appendChild(card);
+        });
+
+        // book list
+        const mb = $('#meBooks'); mb.innerHTML = '';
+        userReviews.forEach(r => {
+          const b = state.books.find(x=>x.id==r.libroId) || {title:'-'};
+          const li = document.createElement('li'); li.textContent = `${b.title} — ${r.texto}`;
+          mb.appendChild(li);
+        });
+
+        const percent = Math.min(100, Math.round(((state.user.puntos||0) / POINTS_TO_REDEEM) * 100));
+        $('#progressBar').style.width = percent + '%';
+      }
+
+      /* ================
+         Actions: favorites, view, review
+         ================ */
+      function toggleFavorite(bookId, btnEl){
+        if(!state.favorites) state.favorites = [];
+        const idx = state.favorites.indexOf(bookId);
+        if(idx >= 0){ state.favorites.splice(idx,1); btnEl.classList.remove('active'); showToast('Quitado de favoritos'); }
+        else { state.favorites.push(bookId); btnEl.classList.add('active'); showToast('Añadido a favoritos'); }
+        saveFavorites();
+      }
+
+      function openBookDetail(book){
+        const body = $('#modalBody');
+        body.innerHTML = `
+          <div class="modal-grid">
+            <div>
+              <img src="${book.img}" alt="${escapeHtml(book.title)}" style="width:100%;border-radius:12px;height:320px;object-fit:cover">
+              <h3 style="margin-top:10px">${escapeHtml(book.title)}</h3>
+              <div class="tiny muted-sm">${escapeHtml(book.desc||'')}</div>
+              <p class="muted-sm" style="margin-top:8px">Lecturas: <strong>${book.reads||0}</strong></p>
+              <div style="margin-top:12px">
+                <button id="openReviewFromDetail" class="btn">✍️ Escribir reseña</button>
+                <button id="favFromDetail" class="btn ghost" style="margin-left:8px">⭐ Favorito</button>
+              </div>
+            </div>
+            <div style="padding:6px">
+              <h4>Reseñas</h4>
+              <div id="detailReviews" style="max-height:380px;overflow:auto;margin-top:8px"></div>
             </div>
           </div>
         `;
-        grid.appendChild(div);
+        $('#modalTitle').textContent = book.title;
+        $('#modalSubtitle').textContent = book.desc || '';
+        openModal();
 
-        // favorite toggle
-        const favBtn = div.querySelector('.heart');
-        if(state.favorites.includes(b.id)) favBtn.classList.add('active');
-        favBtn.addEventListener('click', ()=>{ toggleFavorite(b.id, favBtn); });
+        const dr = $('#detailReviews'); dr.innerHTML = '';
+        (state.reviews || []).filter(r=>r.libroId==book.id).forEach(r => {
+          const u = state.users.find(x=>x.userId==r.userId) || {nombre:'Anónimo'};
+          const d = document.createElement('div');
+          d.style.padding='8px'; d.style.marginBottom='8px'; d.style.borderRadius='8px'; d.style.background='#fff9f5';
+          d.innerHTML = `<strong>${escapeHtml(u.nombre)}</strong><div class="tiny muted-sm" style="margin-top:6px">${escapeHtml(r.texto)}</div>`;
+          dr.appendChild(d);
+        });
 
-        // view & review
-        div.querySelector('[data-action="view"]').addEventListener('click', ()=> openBookDetail(b));
-        div.querySelector('[data-action="review"]').addEventListener('click', ()=> openReviewModal(b));
-      });
-    }
+        $('#openReviewFromDetail').addEventListener('click', ()=> { closeModal(); setTimeout(()=> openReviewModal(book), 160); });
+        $('#favFromDetail').addEventListener('click', ()=> { const btn = document.querySelector(`.heart[data-id="${book.id}"]`); if(btn) toggleFavorite(book.id, btn); });
+      }
 
-    function renderAdmin(){
-      const tbody = document.querySelector('#usersTable tbody');
-      tbody.innerHTML = '';
-      state.users.forEach(u=>{
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td>${escapeHtml(u.nombre)}</td><td>${escapeHtml(u.email)}</td><td>${u.puntos||0}</td><td>${u.librosLeidos||0}</td>`;
-        tbody.appendChild(tr);
-      });
-
-      const ar = $('#adminReviews');
-      ar.innerHTML = '';
-      (state.reviews || []).forEach(r=>{
-        const u = state.users.find(x=>x.userId==r.userId) || {nombre:'-'}; const book = state.books.find(b=>b.id==r.libroId) || {title:'-'};
-        const d = document.createElement('div');
-        d.style.marginBottom = '8px';
-        d.style.padding = '10px';
-        d.style.borderRadius = '10px';
-        d.style.background = 'linear-gradient(180deg,#fffaf6,#fff6ef)';
-        d.innerHTML = `<strong>${escapeHtml(u.nombre)}</strong> sobre <em>${escapeHtml(book.title)}</em><div class="tiny muted-sm" style="margin-top:6px">${escapeHtml(r.texto)}</div>`;
-        ar.appendChild(d);
-      });
-    }
-
-    function renderMyAccount(){
-      if(!state.user){ $('#meName').textContent='-'; $('#mePoints').textContent='0'; $('#meBooks').innerHTML=''; $('#myReviews').innerHTML=''; $('#progressBar').style.width='0%'; $('#meBooksCount').textContent='0'; return; }
-      $('#meName').textContent = state.user.nombre || state.user.email;
-      $('#mePoints').textContent = state.user.puntos || 0;
-      $('#meBooksCount').textContent = state.user.librosLeidos || 0;
-
-      // reviews
-      const userReviews = (state.reviews || []).filter(r=> r.userId == state.user.userId);
-      const myList = $('#myReviews'); myList.innerHTML = '';
-      userReviews.forEach(r=>{
-        const book = state.books.find(b=>b.id==r.libroId) || {title:'-'};
-        const card = document.createElement('div');
-        card.style.marginBottom='8px'; card.style.padding='10px'; card.style.borderRadius='10px'; card.style.background='linear-gradient(180deg,#fffaf6,#fff6ef)';
-        card.innerHTML = `<strong>${escapeHtml(book.title)}</strong><div class="tiny muted-sm" style="margin-top:6px">${escapeHtml(r.texto)}</div>`;
-        myList.appendChild(card);
-      });
-
-      // book list
-      const mb = $('#meBooks'); mb.innerHTML = '';
-      userReviews.forEach(r => {
-        const b = state.books.find(x=>x.id==r.libroId) || {title:'-'};
-        const li = document.createElement('li'); li.textContent = `${b.title} — ${r.texto}`;
-        mb.appendChild(li);
-      });
-
-      // progress
-      const percent = Math.min(100, Math.round(((state.user.puntos||0) / POINTS_TO_REDEEM) * 100));
-      $('#progressBar').style.width = percent + '%';
-    }
-
-    /*******************************
-     * ACTIONS: Favorites, View, Review
-     *******************************/
-    function toggleFavorite(bookId, btnEl){
-      if(!state.favorites) state.favorites = [];
-      const idx = state.favorites.indexOf(bookId);
-      if(idx >= 0){ state.favorites.splice(idx,1); btnEl.classList.remove('active'); showToast('Quitado de favoritos'); }
-      else { state.favorites.push(bookId); btnEl.classList.add('active'); showToast('Añadido a favoritos'); }
-      localStorage.setItem('cetis_favorites', JSON.stringify(state.favorites));
-    }
-
-    function openBookDetail(book){
-      const body = $('#modalBody');
-      body.innerHTML = `
-        <div class="modal-grid">
+      function openReviewModal(book){
+        if(!state.user){ openAuthModal('login'); return; }
+        const body = $('#modalBody');
+        body.innerHTML = `
           <div>
-            <img src="${book.img}" alt="${escapeHtml(book.title)}" style="width:100%;border-radius:12px;height:320px;object-fit:cover">
-            <h3 style="margin-top:10px">${escapeHtml(book.title)}</h3>
-            <div class="tiny muted-sm">${escapeHtml(book.desc||'')}</div>
-            <p class="muted-sm" style="margin-top:8px">Lecturas: <strong>${book.reads||0}</strong></p>
-            <div style="margin-top:12px">
-              <button id="openReviewFromDetail" class="btn">✍️ Escribir reseña</button>
-              <button id="favFromDetail" class="btn ghost" style="margin-left:8px">⭐ Favorito</button>
+            <h3>Reseña — ${escapeHtml(book.title)}</h3>
+            <textarea id="reviewText" class="textarea" placeholder="Escribe tu reseña..."></textarea>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="sendReview" class="btn">Enviar reseña (+${POINTS_PER_REVIEW} pts)</button>
+              <button id="cancelReview" class="btn ghost">Cancelar</button>
             </div>
           </div>
-          <div style="padding:6px">
-            <h4>Reseñas</h4>
-            <div id="detailReviews" style="max-height:380px;overflow:auto;margin-top:8px"></div>
-          </div>
-        </div>
-      `;
-      $('#modalTitle').textContent = book.title;
-      $('#modalSubtitle').textContent = book.desc || '';
-      openModal();
+        `;
+        $('#modalTitle').textContent = 'Reseña';
+        $('#modalSubtitle').textContent = `Libro: ${book.title}`;
+        openModal();
+        $('#cancelReview').addEventListener('click', closeModal);
+        $('#sendReview').addEventListener('click', ()=> submitReview(book));
+      }
 
-      // render reviews
-      const dr = $('#detailReviews'); dr.innerHTML = '';
-      (state.reviews || []).filter(r=>r.libroId==book.id).forEach(r => {
-        const u = state.users.find(x=>x.userId==r.userId) || {nombre:'Anónimo'};
-        const d = document.createElement('div');
-        d.style.padding='8px'; d.style.marginBottom='8px'; d.style.borderRadius='8px'; d.style.background='#fff9f5';
-        d.innerHTML = `<strong>${escapeHtml(u.nombre)}</strong><div class="tiny muted-sm" style="margin-top:6px">${escapeHtml(r.texto)}</div>`;
-        dr.appendChild(d);
-      });
-
-      $('#openReviewFromDetail').addEventListener('click', ()=>{ closeModal(); setTimeout(()=> openReviewModal(book), 180); });
-      $('#favFromDetail').addEventListener('click', ()=>{ const btn = document.querySelector(`.heart[data-id="${book.id}"]`); toggleFavorite(book.id, btn); });
-    }
-
-    function openReviewModal(book){
-      if(!state.user){ openAuthModal('login'); return; }
-      const body = $('#modalBody');
-      body.innerHTML = `
-        <div>
-          <h3>Reseña — ${escapeHtml(book.title)}</h3>
-          <textarea id="reviewText" class="textarea" placeholder="Escribe tu reseña..."></textarea>
-          <div style="display:flex;gap:8px;margin-top:8px">
-            <button id="sendReview" class="btn">Enviar reseña (+${POINTS_PER_REVIEW} pts)</button>
-            <button id="cancelReview" class="btn ghost">Cancelar</button>
-          </div>
-        </div>
-      `;
-      $('#modalTitle').textContent = 'Reseña';
-      $('#modalSubtitle').textContent = `Libro: ${book.title}`;
-      openModal();
-      $('#cancelReview').addEventListener('click', closeModal);
-      $('#sendReview').addEventListener('click', ()=> submitReview(book));
-    }
-
-    function submitReview(book){
-      const text = $('#reviewText').value.trim();
-      if(!text){ alert('Escribe algo por favor'); return; }
-      const payload = { action:'guardarResena', userId: state.user.userId || state.user.userId, libroId: book.id, texto: text };
-      if(API_URL){
-        apiPost(payload).then(res=>{
-          if(res.status === 'ok'){ showToast('Reseña guardada'); closeModal(); refreshAllData(); }
-          else alert(res.msg || 'error');
-        }).catch(()=> alert('Error de conexión'));
-      } else {
-        const r = { resenaId: 'r'+Date.now(), userId: state.user.userId, libroId: book.id, texto: text, fecha: new Date().toISOString() };
+      function submitReview(book){
+        const text = ($('#reviewText') && $('#reviewText').value) ? $('#reviewText').value.trim() : '';
+        if(!text){ alert('Escribe algo por favor'); return; }
+        const r = { resenaId: 'r' + Date.now(), userId: state.user.userId, libroId: book.id, texto: text, fecha: new Date().toISOString() };
         state.reviews.push(r);
-        // sumar puntos localmente
+        saveReviews();
+
+        // sumar puntos
         state.user.puntos = (state.user.puntos || 0) + POINTS_PER_REVIEW;
         state.user.librosLeidos = (state.user.librosLeidos || 0) + 1;
-        // persistir
         const idx = state.users.findIndex(u => u.userId === state.user.userId);
-        if(idx >= 0) { state.users[idx] = { ...state.users[idx], puntos: state.user.puntos, librosLeidos: state.user.librosLeidos }; localStorage.setItem('cetis_users', JSON.stringify(state.users)); }
-        localStorage.setItem('cetis_user', JSON.stringify(state.user));
-        localStorage.setItem('cetis_reviews', JSON.stringify(state.reviews));
+        if(idx >= 0){ state.users[idx] = { ...state.users[idx], puntos: state.user.puntos, librosLeidos: state.user.librosLeidos }; saveUsers(); }
+        saveSession();
+
+        // aumentar reads
+        const bookIdx = state.books.findIndex(b=>b.id===book.id);
+        if(bookIdx >= 0){ state.books[bookIdx].reads = (state.books[bookIdx].reads||0) + 1; saveBooks(); }
+
         closeModal();
         showToast(`+${POINTS_PER_REVIEW} pts`);
         animatePointsGain(POINTS_PER_REVIEW);
         spawnConfetti(28);
-        refreshAllData();
+        refreshUI();
       }
-    }
 
-    /*******************************
-     * AUTH (local fallback)
-     *******************************/
-    function openAuthModal(mode = 'login'){
-      const body = $('#modalBody');
-      if(mode === 'register'){
+      /* ================
+         Auth
+         ================ */
+      function openAuthModal(mode = 'login'){
+        const body = $('#modalBody');
+        if(mode === 'register'){
+          body.innerHTML = `
+            <div style="display:flex;flex-direction:column;gap:8px">
+              <h3>Registro</h3>
+              <input id="regName" class="input" placeholder="Nombre">
+              <input id="regEmail" class="input" placeholder="Email">
+              <input id="regPass" type="password" class="input" placeholder="Contraseña">
+              <div style="display:flex;gap:8px">
+                <button id="doRegister" class="btn">Crear cuenta</button>
+                <button id="backToLogin" class="btn ghost">Volver</button>
+              </div>
+            </div>
+          `;
+          $('#doRegister').addEventListener('click', userRegister);
+          $('#backToLogin').addEventListener('click', ()=> openAuthModal('login'));
+          $('#modalTitle').textContent = 'Registro';
+          $('#modalSubtitle').textContent = 'Crea tu cuenta para participar';
+          openModal();
+          return;
+        }
+
         body.innerHTML = `
-          <div style="display:flex;flex-direction:column;gap:8px">
-            <h3>Registro</h3>
-            <input id="regName" class="input" placeholder="Nombre">
-            <input id="regEmail" class="input" placeholder="Email">
-            <input id="regPass" type="password" class="input" placeholder="Contraseña">
-            <div style="display:flex;gap:8px">
-              <button id="doRegister" class="btn">Crear cuenta</button>
-              <button id="backToLogin" class="btn ghost">Volver</button>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+            <div>
+              <h3>Iniciar sesión</h3>
+              <input id="loginEmail" class="input" placeholder="Email">
+              <input id="loginPass" type="password" class="input" placeholder="Contraseña">
+              <div style="display:flex;gap:8px;margin-top:8px">
+                <button id="doLogin" class="btn">Iniciar</button>
+                <button id="toRegister" class="btn ghost">Registrarme</button>
+              </div>
+              <div style="margin-top:10px" class="tiny muted-sm">¿Olvidaste tu contraseña? Contacta al administrador.</div>
+            </div>
+            <div style="border-left:1px dashed rgba(107,79,59,0.04);padding-left:12px">
+              <h4>Ventajas</h4>
+              <ul style="margin-top:6px;">
+                <li>Gana <strong>${POINTS_PER_REVIEW} pts</strong> por reseña</li>
+                <li>Canjea libros con <strong>${POINTS_TO_REDEEM} pts</strong></li>
+                <li>Guarda favoritos</li>
+              </ul>
             </div>
           </div>
         `;
-        $('#doRegister').addEventListener('click', userRegister);
-        $('#backToLogin').addEventListener('click', ()=> openAuthModal('login'));
-        $('#modalTitle').textContent = 'Registro';
-        $('#modalSubtitle').textContent = 'Crea tu cuenta para participar';
+        $('#doLogin').addEventListener('click', userLogin);
+        $('#toRegister').addEventListener('click', ()=> openAuthModal('register'));
+        $('#modalTitle').textContent = 'Cuenta';
+        $('#modalSubtitle').textContent = 'Inicia sesión o regístrate';
         openModal();
-        return;
       }
 
-      // login
-      body.innerHTML = `
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-          <div>
-            <h3>Iniciar sesión</h3>
-            <input id="loginEmail" class="input" placeholder="Email">
-            <input id="loginPass" type="password" class="input" placeholder="Contraseña">
-            <div style="display:flex;gap:8px;margin-top:8px">
-              <button id="doLogin" class="btn">Iniciar</button>
-              <button id="toRegister" class="btn ghost">Registrarme</button>
-            </div>
-            <div style="margin-top:10px" class="tiny muted-sm">¿Olvidaste tu contraseña? Contacta al administrador.</div>
-          </div>
-          <div style="border-left:1px dashed rgba(107,79,59,0.04);padding-left:12px">
-            <h4>Ventajas</h4>
-            <ul style="margin-top:6px;">
-              <li>Gana <strong>${POINTS_PER_REVIEW} pts</strong> por reseña</li>
-              <li>Canjea libros con <strong>${POINTS_TO_REDEEM} pts</strong></li>
-              <li>Guarda favoritos</li>
-            </ul>
-          </div>
-        </div>
-      `;
-      $('#doLogin').addEventListener('click', userLogin);
-      $('#toRegister').addEventListener('click', ()=> openAuthModal('register'));
-      $('#modalTitle').textContent = 'Cuenta';
-      $('#modalSubtitle').textContent = 'Inicia sesión o regístrate';
-      openModal();
-    }
-
-    function userLogin(){
-      const email = $('#loginEmail').value?.trim();
-      const pass = $('#loginPass').value || '';
-      if(!email){ alert('Ingrese email'); return; }
-      if(API_URL){
-        apiPost({action:'login', email}).then(res=>{
-          if(res.status === 'ok'){ state.user = res.data; localStorage.setItem('cetis_user', JSON.stringify(state.user)); closeModal(); renderUserBadge(); refreshAllData(); showToast('Bienvenido ' + (state.user.nombre || '')); }
-          else alert(res.msg || 'No encontrado');
-        }).catch(()=> alert('Error red'));
-      } else {
-        const u = state.users.find(x=>x.email === email && (x.pass? x.pass === pass : true));
-        if(!u){ alert('Usuario no encontrado. Regístrate.'); return; }
-        state.user = u; localStorage.setItem('cetis_user', JSON.stringify(u));
-        closeModal(); renderUserBadge(); refreshAllData(); showToast('Sesión iniciada');
+      function userLogin(){
+        const email = ($('#loginEmail') && $('#loginEmail').value) ? $('#loginEmail').value.trim() : '';
+        const pass = ($('#loginPass') && $('#loginPass').value) ? $('#loginPass').value : '';
+        if(!email){ alert('Ingrese email'); return; }
+        const u = state.users.find(x=>x.email === email && x.pass === pass);
+        if(!u){ alert('Usuario no encontrado o contraseña incorrecta.'); return; }
+        state.user = { ...u };
+        saveSession();
+        closeModal();
+        renderUserBadge();
+        refreshUI();
+        showToast('Sesión iniciada — ' + (state.user.nombre || ''));
       }
-    }
 
-    function userRegister(){
-      const name = $('#regName').value?.trim();
-      const email = $('#regEmail').value?.trim();
-      const pass = $('#regPass').value || '';
-      if(!name || !email){ alert('Completa nombre y email'); return; }
-      if(API_URL){
-        apiPost({action:'registrarUsuario', nombre:name, email}).then(res=>{
-          if(res.status==='ok'){ state.user = { userId: res.data.userId, nombre: name, email, puntos:0, librosLeidos:0 }; localStorage.setItem('cetis_user', JSON.stringify(state.user)); closeModal(); renderUserBadge(); refreshAllData(); showToast('Registrado correctamente'); }
-          else alert(res.msg || 'error');
-        }).catch(()=> alert('Error red'));
-      } else {
-        const u = { userId: 'u' + Date.now(), nombre: name, email, pass, puntos:0, librosLeidos:0 };
+      function userRegister(){
+        const name = ($('#regName') && $('#regName').value) ? $('#regName').value.trim() : '';
+        const email = ($('#regEmail') && $('#regEmail').value) ? $('#regEmail').value.trim() : '';
+        const pass = ($('#regPass') && $('#regPass').value) ? $('#regPass').value : '';
+        if(!name || !email || !pass){ alert('Completa nombre, email y contraseña'); return; }
+        if(email.toLowerCase() === 'admin@gmail.com'){ alert('Este email está reservado. Usa otro.'); return; }
+        if(state.users.some(x=>x.email === email)){ alert('Ya existe un usuario con ese email'); return; }
+        const u = { userId: 'u' + Date.now(), nombre: name, email, pass, puntos:0, librosLeidos:0, isAdmin:false };
         state.users.push(u);
-        localStorage.setItem('cetis_users', JSON.stringify(state.users));
-        state.user = u; localStorage.setItem('cetis_user', JSON.stringify(u));
-        closeModal(); renderUserBadge(); refreshAllData(); showToast('Cuenta creada — ' + name);
+        saveUsers();
+        state.user = {...u};
+        saveSession();
+        closeModal();
+        renderUserBadge();
+        refreshUI();
+        showToast('Cuenta creada — ' + name);
       }
-    }
 
-    /*******************************
-     * Admin add / seed / refresh
-     *******************************/
-    function adminAddBook(){
-      const title = $('#newTitle').value.trim();
-      const img = $('#newImage').value.trim() || ('https://picsum.photos/seed/'+Date.now()+'/600/380');
-      const desc = $('#newDesc').value.trim();
-      if(!title){ alert('Escribe título'); return; }
-      if(API_URL){
-        apiPost({action:'agregarLibro', nombre:title, imagen:img, descripcion:desc}).then(res=>{ if(res.status==='ok'){ showToast('Libro agregado'); refreshAllData(); } else alert(res.msg||'error'); });
-      } else {
+      function logout(){
+        state.user = null;
+        localStorage.removeItem(STORAGE_KEYS.USER_SESSION);
+        renderUserBadge();
+        refreshUI();
+        showToast('Sesión cerrada');
+      }
+
+      /* ================
+         Admin actions
+         ================ */
+      function adminAddBook(){
+        const title = ($('#newTitle') && $('#newTitle').value) ? $('#newTitle').value.trim() : '';
+        const img = ($('#newImage') && $('#newImage').value) ? $('#newImage').value.trim() : ('https://picsum.photos/seed/'+Date.now()+'/600/380');
+        const desc = ($('#newDesc') && $('#newDesc').value) ? $('#newDesc').value.trim() : '';
+        if(!title){ alert('Escribe título'); return; }
         const book = { id:'b'+Date.now(), title, img, desc, reads:0 };
         state.books.push(book);
+        saveBooks();
         renderBooks();
         showToast('Libro agregado localmente');
+        if($('#newTitle')) $('#newTitle').value='';
+        if($('#newImage')) $('#newImage').value='';
+        if($('#newDesc')) $('#newDesc').value='';
       }
-    }
 
-    /*******************************
-     * Redeem
-     *******************************/
-    function redeemBook(){
-      if(!state.user){ openAuthModal('login'); return; }
-      if((state.user.puntos||0) < POINTS_TO_REDEEM){ alert('No tienes suficientes puntos'); return; }
-      const chosen = prompt('Escribe el título exacto del libro que deseas canjear (ver catálogo):');
-      if(!chosen) return;
-      const book = state.books.find(b => b.title.toLowerCase() === chosen.toLowerCase());
-      if(!book){ alert('Libro no encontrado'); return; }
-      if(API_URL){
-        apiPost({action:'guardarCanje', userId: state.user.userId, libroId: book.id}).then(res=>{ if(res.status==='ok'){ showToast('Canje registrado'); refreshAllData(); } else alert(res.msg||'error'); });
-      } else {
-        state.user.puntos -= POINTS_TO_REDEEM;
+      /* ================
+         Redeem
+         ================ */
+      function openRedeemModal(){
+        if(!state.user){ openAuthModal('login'); return; }
+        const body = $('#modalBody');
+        let html = `<h3>Canjea tus puntos</h3>`;
+        html += `<div class="tiny muted-sm" style="margin-bottom:8px">Tienes ${state.user.puntos||0} pts. Cada premio cuesta ${POINTS_TO_REDEEM} pts.</div>`;
+        html += `<div style="display:grid;gap:8px">`;
+        state.rewards.forEach(r=>{
+          html += `<div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:10px;background:#fff9f5"><img src="${r.img}" style="width:72px;height:56px;object-fit:cover;border-radius:8px"><div style="flex:1"><strong>${escapeHtml(r.title)}</strong><div class="small-muted">${escapeHtml(r.desc)}</div></div><div><button class="btn redeem-btn" data-rid="${r.id}">Canjear</button></div></div>`;
+        });
+        html += `</div>`;
+        body.innerHTML = html;
+        $('#modalTitle').textContent = 'Canje de puntos';
+        openModal();
+        $$('.redeem-btn').forEach(b => b.addEventListener('click', ev => handleRedeem(ev.currentTarget.dataset.rid)));
+      }
+
+      function handleRedeem(rewardId){
+        const reward = state.rewards.find(r=>r.id===rewardId);
+        if(!reward) return;
+        if((state.user.puntos||0) < reward.cost){ alert('No tienes suficientes puntos'); return; }
+        state.user.puntos -= reward.cost;
         const idx = state.users.findIndex(u => u.userId === state.user.userId);
-        if(idx >= 0){ state.users[idx] = {...state.users[idx], puntos: state.user.puntos}; localStorage.setItem('cetis_users', JSON.stringify(state.users)); }
-        localStorage.setItem('cetis_user', JSON.stringify(state.user));
-        showToast('Canje realizado — disfruta tu libro');
+        if(idx >= 0){ state.users[idx] = {...state.users[idx], puntos: state.user.puntos}; saveUsers(); }
+        saveSession();
+        showToast('Canje realizado — revisa con administración para reclamar');
+        closeModal();
         renderMyAccount();
+        renderUserBadge();
       }
-    }
 
-    /*******************************
-     * Utility & modal helpers
-     *******************************/
-    function openModal(){ $('#modal').classList.add('open'); $('#modal').setAttribute('aria-hidden','false'); }
-    function closeModal(){ $('#modal').classList.remove('open'); $('#modal').setAttribute('aria-hidden','true'); }
-    $('#closeModal').addEventListener('click', closeModal);
-    window.addEventListener('keydown', e => { if(e.key==='Escape') closeModal(); });
+      /* ================
+         Modal & utils
+         ================ */
+      function openModal(){ $('#modal').classList.add('open'); $('#modal').setAttribute('aria-hidden','false'); }
+      function closeModal(){ $('#modal').classList.remove('open'); $('#modal').setAttribute('aria-hidden','true'); }
+      function openModalWithContent(title, subtitle=''){
+        $('#modalTitle').textContent = title;
+        $('#modalSubtitle').textContent = subtitle || '';
+        openModal();
+      }
+      function escapeHtml(str){ return (str||'').toString().replace(/[&<>"']/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s])); }
 
-    function openModalWithContent(title, subtitle, htmlContent){
-      $('#modalTitle').textContent = title;
-      $('#modalSubtitle').textContent = subtitle || '';
-      $('#modalBody').innerHTML = htmlContent || '';
-      openModal();
-    }
+      /* ================
+         Search & refresh
+         ================ */
+      function doSearch(){
+        const q = ($('#searchInput') && $('#searchInput').value) ? $('#searchInput').value.trim() : '';
+        const sort = $('#sortSelect') ? $('#sortSelect').value : 'relevance';
+        renderBooks(q, sort);
+      }
 
-    function openModal(title='Detalle', content=''){ $('#modalTitle').textContent = title; openModal(); }
-
-    function escapeHtml(str){ return (str||'').toString().replace(/[&<>"']/g, s=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[s])); }
-
-    /*******************************
-     * Search & refresh
-     *******************************/
-    function doSearch(){
-      const q = $('#searchInput').value.trim();
-      const sort = $('#sortSelect') ? $('#sortSelect').value : 'relevance';
-      renderBooks(q, sort);
-    }
-
-    function refreshAllData(){
-      if(!API_URL){
-        const lu = localStorage.getItem('cetis_users'); state.users = lu? JSON.parse(lu) : state.users;
-        const lr = localStorage.getItem('cetis_reviews'); state.reviews = lr? JSON.parse(lr) : state.reviews;
-        const lf = localStorage.getItem('cetis_favorites'); state.favorites = lf? JSON.parse(lf) : state.favorites;
+      function refreshUI(){
+        loadState();
         renderBooks();
         renderAdmin();
         renderUserBadge();
         renderMyAccount();
-        return;
       }
-      Promise.all([
-        apiPost({action:'listarLibros'}).catch(()=>({status:'error'})),
-        apiPost({action:'listarUsuarios'}).catch(()=>({status:'error'})),
-        apiPost({action:'listarResenas'}).catch(()=>({status:'error'}))
-      ]).then(([lb,lu,lr])=>{
-        if(lb && lb.status==='ok'){ const rows = lb.data; const books = []; if(Array.isArray(rows)) rows.forEach(r=>{ if(Array.isArray(r)){ const [id,nombre,imagen,descripcion,reads] = r; if(id) books.push({id: id.toString(), title: nombre.toString(), img: imagen||'https://picsum.photos/seed/'+Math.random()+'/600/380', desc: descripcion||'', reads: parseInt(reads)||0}); } }); if(books.length) state.books = books; else state.books = seedBooks; }
-        if(lu && lu.status==='ok'){ const rows = lu.data; const users = []; if(Array.isArray(rows)) rows.forEach(r=>{ if(Array.isArray(r)){ const [id,nombre,email,puntos,libros] = r; if(id) users.push({userId:id.toString(), nombre: nombre||email, email: email||'', puntos: parseInt(puntos)||0, librosLeidos: parseInt(libros)||0}); } }); state.users = users; }
-        if(lr && lr.status==='ok'){ const rows = lr.data; const reviews = []; if(Array.isArray(rows)) rows.forEach(r=>{ if(Array.isArray(r)){ const [id,userId,libroId,texto,fecha] = r; if(id) reviews.push({resenaId:id.toString(), userId: userId?userId.toString():'', libroId: libroId?libroId.toString():'', texto: texto||'', fecha}); } }); state.reviews = reviews; }
-        renderBooks(); renderAdmin(); renderUserBadge(); renderMyAccount();
-      }).catch(e=>{ console.warn('refresh error', e); renderBooks(); renderAdmin(); renderMyAccount(); });
-    }
 
-    async function apiPost(payload){
-      try{
-        const params = new URLSearchParams(payload);
-        const resp = await fetch(API_URL + (API_URL.includes('?')? '&':'?') + params.toString(), { method:'POST' });
-        return await resp.json();
-      } catch(e){ return {status:'error', msg: e.message } }
-    }
-
-    /*******************************
-     * UI niceties: points animation
-     *******************************/
-    function animatePointsGain(points){
-      const el = document.createElement('div');
-      el.textContent = `+${points} pts`;
-      Object.assign(el.style,{position:'fixed',right:'30px',bottom:'120px',padding:'10px 14px',background:'linear-gradient(90deg,var(--accent-1),var(--accent-2))',color:'white',borderRadius:'12px',boxShadow:'0 12px 30px rgba(0,0,0,0.12)',fontWeight:800,zIndex:300});
-      document.body.appendChild(el);
-      requestAnimationFrame(()=>{ el.style.transform = 'translateY(-70px)'; el.style.opacity = '1'; el.style.transition = 'transform 900ms cubic-bezier(.2,.9,.3,1), opacity 700ms'; });
-      setTimeout(()=>{ el.style.opacity = 0; el.style.transform = 'translateY(-130px)'; }, 1600);
-      setTimeout(()=> el.remove(), 2300);
-    }
-
-    /*******************************
-     * Favorites modal (quick view)
-     *******************************/
-    function renderFavoritesModal(){
-      const favs = (state.favorites || []).map(id => state.books.find(b=>b.id==id)).filter(Boolean);
-      let html = `<h4>Favoritos (${favs.length})</h4>`;
-      if(!favs.length) html += `<div class="tiny muted-sm">No tienes favoritos aún</div>`;
-      else{
-        html += `<div style="display:grid;gap:8px;margin-top:8px">`;
-        favs.forEach(b => { html += `<div style="padding:8px;border-radius:10px;background:#fff9f5;display:flex;align-items:center;gap:8px"><img src="${b.img}" style="width:60px;height:44px;object-fit:cover;border-radius:8px"><div><strong>${escapeHtml(b.title)}</strong><div class="tiny muted-sm">${escapeHtml(b.desc||'')}</div></div></div>` });
-        html += `</div>`;
+      /* ================
+         UI niceties
+         ================ */
+      function animatePointsGain(points){
+        const el = document.createElement('div');
+        el.textContent = `+${points} pts`;
+        Object.assign(el.style,{position:'fixed',right:'30px',bottom:'120px',padding:'10px 14px',background:'linear-gradient(90deg,var(--accent-1),var(--accent-2))',color:'white',borderRadius:'12px',boxShadow:'0 12px 30px rgba(0,0,0,0.12)',fontWeight:800,zIndex:300});
+        document.body.appendChild(el);
+        requestAnimationFrame(()=>{ el.style.transform = 'translateY(-70px)'; el.style.opacity = '1'; el.style.transition = 'transform 900ms cubic-bezier(.2,.9,.3,1), opacity 700ms'; });
+        setTimeout(()=>{ el.style.opacity = 0; el.style.transform = 'translateY(-130px)'; }, 1600);
+        setTimeout(()=> el.remove(), 2300);
       }
-      $('#modalBody').innerHTML = html;
-      $('#modalTitle').textContent = 'Favoritos';
-      openModal();
-    }
 
-    /*******************************
-     * Minor: animate on page load & helpers
-     *******************************/
-    function switchView(view){
-      $$('[data-view]').forEach(el => el.style.display = 'none');
-      const sel = document.querySelector(`[data-view="${view}"]`);
-      if(sel) sel.style.display = 'block';
-      if(view === 'miCuenta') renderMyAccount();
-      if(view === 'admin') renderAdmin();
-    }
+      function renderFavoritesModal(){
+        const favs = (state.favorites || []).map(id => state.books.find(b=>b.id==id)).filter(Boolean);
+        let html = `<h4>Favoritos (${favs.length})</h4>`;
+        if(!favs.length) html += `<div class="tiny muted-sm">No tienes favoritos aún</div>`;
+        else{
+          html += `<div style="display:grid;gap:8px;margin-top:8px">`;
+          favs.forEach(b => { html += `<div style="padding:8px;border-radius:10px;background:#fff9f5;display:flex;align-items:center;gap:8px"><img src="${b.img}" style="width:60px;height:44px;object-fit:cover;border-radius:8px"><div><strong>${escapeHtml(b.title)}</strong><div class="tiny muted-sm">${escapeHtml(b.desc||'')}</div></div></div>` });
+          html += `</div>`;
+        }
+        $('#modalBody').innerHTML = html;
+        $('#modalTitle').textContent = 'Favoritos';
+        openModal();
+      }
 
-    // helpers
-    function openAuthModal(){ openAuthModal; openAuthModal; openAuthModal; } // placeholder (not used)
-    // fix earlier accidental redefinition; the real function is above: openAuthModal(mode)
-    // wire nav default
-    window.addEventListener('load', ()=>{ init(); switchView('catalog'); });
+      function switchView(view){
+        $$('[data-view]').forEach(el => el.style.display = 'none');
+        const sel = document.querySelector(`[data-view="${view}"]`);
+        if(sel) sel.style.display = 'block';
+        if(view === 'miCuenta') renderMyAccount();
+        if(view === 'admin') renderAdmin();
+      }
 
-    /*******************************
-     * Small: animate on review submit already handled
-     *******************************/
+      /* ================
+         Save helpers
+         ================ */
+      function saveBooks(){ localStorage.setItem(STORAGE_KEYS.BOOKS, JSON.stringify(state.books)); }
+      function saveRewards(){ localStorage.setItem(STORAGE_KEYS.REWARDS, JSON.stringify(state.rewards)); }
+      // users/reviews/fav already have functions above
 
-    // Expose some functions globally to keep compatibility
-    window.refreshAllData = refreshAllData;
-    window.renderBooks = renderBooks;
-    window.openLogin = ()=> openAuthModal('login');
-    window.openRegister = ()=> openAuthModal('register');
+      /* ================
+         Expose & start
+         ================ */
+      window.refreshAllData = refreshUI;
+      window.renderBooks = renderBooks;
 
-    // small fix: ensure openAuthModal reference bound
-    // (openAuthModal already defined earlier, so no-op here)
-
+      // kick off
+      document.addEventListener('DOMContentLoaded', init);
+    })();
   </script>
 </body>
 </html>
